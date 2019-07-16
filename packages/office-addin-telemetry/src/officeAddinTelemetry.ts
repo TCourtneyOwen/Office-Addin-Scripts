@@ -15,6 +15,34 @@ export interface telemetryObject {
   testData: boolean;
 }
 
+const optInResponsePath: string = require("os").homedir() + "/officeAddinTelemetry.txt";
+
+export function promptForTelemetry(telemtryGroupName: string): boolean {
+  try {
+    const name = telemtryGroupName;
+    const obj = {};
+    obj[name] =  name;
+    if (fs.existsSync(optInResponsePath)) {
+      const text = fs.readFileSync(optInResponsePath, "utf8");
+      if (text.includes(name)) {
+        const old = text.substring(text.indexOf(name, 0), text.indexOf("}", text.indexOf(name))+ 1);
+        if(old.includes('"telemetryEnabled": false,') || old.includes('"telemetryEnabled": true,')) {
+          return false;
+        }
+        return true;
+      } else {
+        // fs.writeFileSync(optInResponsePath, text + JSON.stringify({ [name]: this.telemetryObject }, null, 2));
+        return true;
+      }
+    } else {
+      // fs.writeFileSync(this.path, JSON.stringify({ [name]: this.telemetryObject }, null, 2));
+        return true;
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 export class OfficeAddinTelemetry {
   public  chalk = require("chalk");
   private telemetryClient = appInsights.defaultClient;
@@ -243,3 +271,4 @@ export class OfficeAddinTelemetry {
   }
 
 }
+
