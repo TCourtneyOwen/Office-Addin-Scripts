@@ -11,6 +11,9 @@ module.exports = async (env, options) => {
   const config = {
     devtool: "source-map",
     entry: {
+      cli: "./src/cli.ts",
+      commands: "./src/commands.ts",
+      configure: "./src/configureSSO.ts",
       server: "./src/server.ts",
       auth: "./src/auth.ts",
       errors: "./src/errors.ts",
@@ -62,7 +65,15 @@ module.exports = async (env, options) => {
                 {
           to: "index.html",
           from: "./public/index.html"
-                }
+                },
+                {
+          to: "azRestAppCreateCmd.txt",
+          from: "./scripts/azRestAppCreateCmd.txt"
+                },
+        {
+          to: "azRestSetIdentifierUri.txt",
+          from: "./scripts/azRestSetIdentifierUri.txt"
+        }
             ]),
         ]
     };

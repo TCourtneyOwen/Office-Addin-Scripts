@@ -1,9 +1,10 @@
-import * as sso from './configureSSO';
+import { configureSSOApplication } from './configureSSO';
+import { startSsoServer } from './server';
 
-export function configureSSO(manifestPath: string, ssoAppName: string) {
-    sso.configureSSO(manifestPath, ssoAppName);
+export async function configureSSO(manifestPath: string, ssoAppName: string) {
+    await configureSSOApplication(manifestPath, ssoAppName);
 }
 
-export async function startServer(manifestPath: string) {
-    sso.startSsoServer(manifestPath);
+export async function startServer(ssoApplicationName: string) {
+    await startSsoServer(ssoApplicationName);
 }

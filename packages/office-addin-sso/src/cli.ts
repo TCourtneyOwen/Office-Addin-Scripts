@@ -15,7 +15,7 @@ commander
     .action(commands.configureSSO);
 
 commander
-    .command('start <manifest-path>')
+    .command('start <sso-app-name>')
     .action(commands.startServer);
 
 // if the command is not known, display an error
