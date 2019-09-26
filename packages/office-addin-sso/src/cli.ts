@@ -16,7 +16,7 @@ commander
 
 commander
     .command('start <sso-app-name>')
-    .action(commands.startServer);
+    .action(commands.startSSOService);
 
 // if the command is not known, display an error
 commander.on('command:*', () => {

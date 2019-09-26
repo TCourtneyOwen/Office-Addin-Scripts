@@ -13,22 +13,22 @@ import { AuthModule } from './auth';
 import { MSGraphHelper } from './msgraph-helper';
 import { UnauthorizedError } from './errors';
 import * as devCerts from 'office-addin-dev-certs';
-import { readSsoJsonData } from './configureSSO';
+import { readSsoJsonData, ssoApplicationExists } from './ssoDataSetttings';
 
-export async function startSsoServer(ssoApplicationName: string): Promise<boolean> {
+export async function startSsoService(ssoApplicationName: string): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
         /* Set the environment to development if not set */
         const env = process.env.NODE_ENV || 'development';
-        const ssoJsonData = readSsoJsonData();
-        if (ssoJsonData === undefined) {
+        const ssoJsonData = await readSsoJsonData();
+        if (ssoJsonData === undefined || !ssoApplicationExists(ssoApplicationName)) {
             reject(new UnauthorizedError('No application data available for specified application'));
         }
 
         /* Instantiate AuthModule to assist with JWT parsing and verification, and token acquisition. */
         const auth = new AuthModule(
     /* These values are required for our application to exchange the token and get access to the resource data */
-    /* client_id */ ssoJsonData.ssoApplicationInstances['ssotest'].applicationId,
-    /* client_secret */ ssoJsonData.ssoApplicationInstances['ssotest'].applicationSecret,
+    /* client_id */ ssoJsonData.ssoApplicationInstances[ssoApplicationName].applicationId,
+    /* client_secret */ ssoJsonData.ssoApplicationInstances[ssoApplicationName].applicationSecret,
 
     /* This information tells our server where to download the signing keys to validate the JWT that we received,
      * and where to get tokens. This is not configured for multi tenant; i.e., it is assumed that the source of the JWT and our application live
@@ -41,9 +41,9 @@ export async function startSsoServer(ssoApplicationName: string): Promise<boolea
 
     /* Token is validated against the following values: */
     // Audience is the same as the client ID because, relative to the Office host, the add-in is the "resource".
-    /* audience */ ssoJsonData.ssoApplicationInstances['ssotest'].applicationId,
+    /* audience */ ssoJsonData.ssoApplicationInstances[ssoApplicationName].applicationId,
     /* scopes */['access_as_user'],
-    /* issuer */ `https://login.microsoftonline.com/${ssoJsonData.ssoApplicationInstances['ssotest'].tenantId}/v2.0`,
+    /* issuer */ `https://login.microsoftonline.com/${ssoJsonData.ssoApplicationInstances[ssoApplicationName].tenantId}/v2.0`,
         );
 
         /* A promisified express handler to catch errors easily */

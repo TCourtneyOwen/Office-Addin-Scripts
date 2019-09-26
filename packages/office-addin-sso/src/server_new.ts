@@ -138,3 +138,26 @@ export class SSOAuthService {
         }
     }
 }
+
+
+// export async function startSsoServer(ssoApplicationName: string): Promise<boolean> {
+//     return new Promise<boolean>(async (resolve, reject) => {
+//         try {
+//             if (ssoApplicationExists(ssoApplicationName)) {
+//                 const ssoApplicationData = readSsoJsonData();
+//                 const serverOptions: server.ISSOAuthServiceOptions = {
+//                     applicationId: ssoApplicationData.ssoApplicationInstances[ssoApplicationName].applicationId,
+//                     tenantId: ssoApplicationData.ssoApplicationInstances[ssoApplicationName].tenantId,
+//                     applicationSecret: ssoApplicationData.ssoApplicationInstances[ssoApplicationName].applicationSecret
+//                 };
+//                 const ssoAuthService: server.SSOAuthService = new server.SSOAuthService(serverOptions);
+//                 ssoAuthService.startServer();
+//                 resolve(true);
+//             }
+//             resolve(false);
+
+//         } catch (err) {
+//             reject(false);
+//         }
+//     });
+// }
