@@ -5,4 +5,6 @@ export const createApplicationCommand: string = 'az rest -m post -u https://grap
 export const setIdentifierUriCommand: string = 'az rest --method patch --uri https://graph.microsoft.com/beta/applications/<App_Object_ID> --headers "Content-Type=application/json" --body "{\"identifierUris\": [\"api://localhost:3000/<App_Id>\"]}"';
 export const ssoDataJsonFilePath: string = path.join(os.homedir(), '/office-addin-sso-data.json');
 export const azRestpCreateCommandPath: string = './scripts/azRestAppCreateCmd.txt';
+export const grantAdminConsentCommandPath = './scripts/azGrantAdminConsentCmd.txt';
 export const setIdentifierUriCommmandPath: string = './scripts/azRestSetIdentifierUri.txt';
+export const setSigninAudienceCommandPath: string = './scripts/azSetSignInAudienceCmd.txt';
