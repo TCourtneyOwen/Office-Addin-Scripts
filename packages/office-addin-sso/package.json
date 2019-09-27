@@ -10,8 +10,8 @@
     "tsc": "tsc -p tsconfig.json",
     "tsc-w": "tsc -p tsconfig.json --watch",
     "copy": "cpx \"src/scripts/**/*.*\" lib/scripts",
-    "start:server": "nodemon dist/server.js --debug=5858",
-    "start:server:debug": "nodemon --inspect dist/server.js --debug=5858"
+    "start:server": "nodemon lib/server.js --debug=5858",
+    "start:server:debug": "nodemon --inspect lib/server.js --debug=5858"
   },
   "author": "Office Dev",
   "license": "MIT",

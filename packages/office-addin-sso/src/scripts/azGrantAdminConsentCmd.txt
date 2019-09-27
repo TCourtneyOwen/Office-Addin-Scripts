@@ -1,1 +1,1 @@
-az ad app permission admin-consent --id <App_Object_ID>
+az ad app permission admin-consent --id <App_ID>

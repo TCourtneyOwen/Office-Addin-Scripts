@@ -19,7 +19,7 @@ export async function startSsoService(ssoApplicationName: string): Promise<boole
     return new Promise<boolean>(async (resolve, reject) => {
         /* Set the environment to development if not set */
         const env = process.env.NODE_ENV || 'development';
-        const ssoJsonData = await readSsoJsonData();
+        const ssoJsonData = readSsoJsonData();
         if (ssoJsonData === undefined || !ssoApplicationExists(ssoApplicationName)) {
             reject(new UnauthorizedError('No application data available for specified application'));
         }
