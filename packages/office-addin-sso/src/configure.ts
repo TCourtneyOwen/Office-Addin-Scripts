@@ -1,7 +1,7 @@
 import * as childProcess from 'child_process';
 import * as defaults from './defaults';
 import * as fs from 'fs';
-import * as passwordGenerator from 'random-base64-string';
+import * as passwordGenerator from "password-generator";
 import { modifyManifestFile } from 'office-addin-manifest';
 import { writeApplicationJsonData } from './ssoDataSetttings';
 
@@ -11,7 +11,7 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
     if (userJson) {
         console.log('Login was successful!');
     }
-    const secret = passwordGenerator(32, false);
+    const secret = passwordGenerator(32, true);
     const applicationJson: any = await createNewApplication(ssoAppName, secret);
     writeApplicationJsonData(applicationJson, userJson, secret);
     updateProjectManifest(manifestPath, applicationJson.appId);
@@ -20,7 +20,7 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
 async function grantAdminContent(applicationJson: any) {
     try {
         console.log('Granting admin consent');
-        let azRestCommand = await fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
+        let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {

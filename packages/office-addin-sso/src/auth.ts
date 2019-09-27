@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license in the root of the repo.
 
-/* 
-    This file provides the provides authorization context, token verification, and token acquisition. 
+/*
+    This file provides the provides authorization context, token verification, and token acquisition.
 */
 
 import 'isomorphic-fetch';
@@ -39,7 +39,7 @@ export class AuthModule {
         public audience: string,
         public scopes: string[],
         public issuer: string
-    ) { 
+    ) {
     }
 
     /**
@@ -92,7 +92,7 @@ ${signing_key}
         catch (exception) {
             throw new ServerError('Unable to download JWT signing keys.', 500, exception);
         }
-    };
+    }
 
     /**
      * Verify the JWT with the appropirate signing key.
@@ -110,10 +110,9 @@ ${signing_key}
             const decoded = jsonwebtoken.decode(jwt, { complete: true });
 
             /* Check return decoded type is as expected */
-            if (!((<{[key:string] :any;}>decoded).header !== undefined)) throw new UnauthorizedError('Unable to verify JWT');
-           
-            const header = (<{[key:string] :any;}>decoded).header;
-            const payload = (<{[key:string] :any;}>decoded).payload;
+            if (!((<{[key: string] : any; }>decoded).header !== undefined)) { throw new UnauthorizedError('Unable to verify JWT'); }
+            const header = (<{[key: string] : any; }>decoded).header;
+            const payload = (<{[key: string] : any; }>decoded).payload;
 
             /* Ensure other parameters of the payload are consistent. */
             for (const assertion of Object.keys(assertions)) {
@@ -135,16 +134,16 @@ ${signing_key}
     }
 
     /**
-     * Get access token for the resource either from storage or by using 
+     * Get access token for the resource either from storage or by using
      * the current exchangeable token to get a fresh token for the resource.
      * @param jwt The JSON Web Token that the client sent to get access to this application.
      * @param scopes The scopes that need to be permitted by the new token for the backend resource.
-     * @param resource (optional) The resource that needs to be accessed after accquiring the new token. 
+     * @param resource (optional) The resource that needs to be accessed after accquiring the new token.
      * Do not pass a resource, if the token service is Azure AD V2 endpoint because it infers the
-     * resource from the scopes.                 
+     * resource from the scopes.
      */
     async acquireTokenOnBehalfOf(jwt: string, scopes: string[] = ['openid'], resource?: string) {
-        
+
         // Get a new resource token by exchange, if the current one has expired or will in the next minute
         // or doesn't exist yet (e.g., the add-in is being run for the first time on this computer). Else
         // get it from storage.
@@ -162,15 +161,15 @@ ${signing_key}
      * Exchange the current exchangeable token for a new token to a resource.
      * @param jwt JSON Web Token that obtained via single sign on.
      * @param scopes The scopes that need to be permitted on the new token
-     * @param resource (optional) The resource that needs to be accessed after accquiring the new token. 
+     * @param resource (optional) The resource that needs to be accessed after accquiring the new token.
      * Do not pass a resource, if the token service is Azure AD V2 endpoint because it infers the
-     * resource from the scopes.                 .                 
+     * resource from the scopes.                 .
      */
     private async exchangeForToken(jwt: string, scopes: string[] = ['openid'], resource?: string) {
         try {
-            // The Azure AD V2 endpoint infers the intended resource from the scopes. If 
+            // The Azure AD V2 endpoint infers the intended resource from the scopes. If
             // a redundant resource parameter is sent to it, Azure AD V2 will return an error and not send
-            // the token. So we need to ensure that we don't send one, when V2 is the token endpoint.            
+            // the token. So we need to ensure that we don't send one, when V2 is the token endpoint.
             const v2Params = {
                 client_id: this.clientId,
                 client_secret: this.clientSecret,
@@ -182,8 +181,8 @@ ${signing_key}
 
             let finalParams = {};
             if (resource) {
-                let v1Params  = { resource: resource };  
-                for(var key in v2Params) { v1Params[key] = v2Params[key]; }
+                let v1Params  = { resource: resource };
+                for (var key in v2Params) { v1Params[key] = v2Params[key]; }
                 finalParams = v1Params;
             } else {
                 finalParams = v2Params;
@@ -200,7 +199,7 @@ ${signing_key}
 
             if (res.status !== 200) {
                 const exception = await res.json();
-                throw exception;                
+                throw exception;
             }
 
             const json = await res.json();
@@ -215,9 +214,7 @@ ${signing_key}
             return resourceToken;
         }
         catch (exception) {
-            throw new UnauthorizedError('Unable to obtain an access token to the resource. ' 
-                                        + JSON.stringify(exception), 
-                                        exception);
+            throw new UnauthorizedError('Unable to obtain an access token to the resource. ' + JSON.stringify(exception), exception);
         }
     }
 }
