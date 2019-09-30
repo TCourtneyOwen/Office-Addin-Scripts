@@ -1,7 +1,7 @@
 import * as childProcess from 'child_process';
 import * as defaults from './defaults';
 import * as fs from 'fs';
-import * as passwordGenerator from "password-generator";
+import * as passwordGenerator from "generate-password";
 import { modifyManifestFile } from 'office-addin-manifest';
 import { writeApplicationJsonData } from './ssoDataSetttings';
 
@@ -11,7 +11,7 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
     if (userJson) {
         console.log('Login was successful!');
     }
-    const secret = passwordGenerator(32, true);
+    const secret = passwordGenerator.generate({length: 32, numbers: true, uppercase: true, strict: true});
     const applicationJson: any = await createNewApplication(ssoAppName, secret);
     writeApplicationJsonData(applicationJson, userJson, secret);
     updateProjectManifest(manifestPath, applicationJson.appId);
@@ -37,7 +37,6 @@ async function createNewApplication(ssoAppName: string, secret: string): Promise
         console.log('Registering new application in Azure');
         let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
         const re = new RegExp('{SSO-AppName}', 'g');
-        secret = passwordGenerator(32, false);
         azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{SSO-Secret}', secret);
         const applicationJson: Object = await promiseExecuteCommand(azRestNewAppCommand, true /* configureSSO */);
         if (applicationJson) {

@@ -99,7 +99,7 @@ ${signing_key}
      * Upon successful validation, return the payload.
      * @param req express request parameter
      */
-    verifyJWT(req: Request, assertions?: { [field: string]: string }) {
+    verifyJWT(req: Request, assertions?: Object) {
         try {
             const authorization = req.get('Authorization');
             if (authorization == null) {
@@ -216,5 +216,10 @@ ${signing_key}
         catch (exception) {
             throw new UnauthorizedError('Unable to obtain an access token to the resource. ' + JSON.stringify(exception), exception);
         }
+    }
+
+    public async getGraphToken(req: Request, graphApiScopes: [string], assertions?: Object) {
+        const { jwt } = this.verifyJWT(req, assertions);
+        return await this.acquireTokenOnBehalfOf(jwt, graphApiScopes);
     }
 }

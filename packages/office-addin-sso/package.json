@@ -35,7 +35,7 @@
     "morgan": "1.9.1",
     "node-persist": "3.0.2",
     "nodemon": "1.18.9",
-    "password-generator": "2.2.0",
+    "generate-password": "^1.4.2",
     "random-base64-string": "1.0.1"
   },
   "devDependencies": {
