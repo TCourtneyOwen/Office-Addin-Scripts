@@ -3,7 +3,7 @@ import * as defaults from './defaults';
 import * as fs from 'fs';
 import * as passwordGenerator from "generate-password";
 import { modifyManifestFile } from 'office-addin-manifest';
-import { writeApplicationJsonData } from './ssoDataSetttings';
+import { writeApplicationJsonData } from './ssoDataSettings';
 
 export async function configureSSOApplication(manifestPath: string, ssoAppName: string) {
     console.log(`local path is ${__dirname}`);
@@ -17,9 +17,16 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
     updateProjectManifest(manifestPath, applicationJson.appId);
 }
 
-async function grantAdminContent(applicationJson: any) {
+function delay(milliseconds: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
+export async function grantAdminConsent(applicationJson: any) {
     try {
         console.log('Granting admin consent');
+        await delay(25000);
         let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
         await promiseExecuteCommand(azRestCommand);
@@ -59,7 +66,7 @@ export async function promiseExecuteCommand(cmd: string, configureSSO: boolean =
                 }
                 if (configureSSO) {
                     await setIdentifierUri(json);
-                    await grantAdminContent(json);
+                    await grantAdminConsent(json);
                     await setSignInAudience(json);
                 }
                 resolve(json);

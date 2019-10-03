@@ -13,10 +13,11 @@ import { AuthModule } from './auth';
 import { MSGraphHelper } from './msgraph-helper';
 import { UnauthorizedError } from './errors';
 import * as devCerts from 'office-addin-dev-certs';
-import { readSsoJsonData, ssoApplicationExists } from './ssoDataSetttings';
 
 export interface ISSOptions {
-    applicationName: string;
+    applicationId: string;
+    applicationSecret: string;
+    tenantId: string;
     applicationApiScopes: Object;
     graphApi: string;
     graphApiScopes: [string];
@@ -25,30 +26,23 @@ export interface ISSOptions {
 
 export class SSOService {
     private app: express.Express;
-    private appName: string;
     private auth: AuthModule;
-    private options: ISSOptions;
+    private ssoOptions: ISSOptions;
 
     constructor(ssoOptions: ISSOptions) {
         this.app = express();
-        this.appName = ssoOptions.applicationName;
-        this.options = ssoOptions;
+        this.ssoOptions = ssoOptions;
 
-        /* Instantiate AuthModule to assist with JWT parsing and verification, and token acquisition. */
-        const ssoJsonData = readSsoJsonData();
-        if (ssoJsonData === undefined || !ssoApplicationExists(this.appName)) {
-            throw new UnauthorizedError('No application data available for specified application');
-        }
         this.auth = new AuthModule(
-            ssoJsonData.ssoApplicationInstances[this.appName].applicationId,
-            ssoJsonData.ssoApplicationInstances[this.appName].applicationSecret,
+            this.ssoOptions.applicationId,
+            this.ssoOptions.applicationSecret,
             'common',
             'https://login.microsoftonline.com',
             '.well-known/openid-configuration',
             '/oauth2/v2.0/token',
-            ssoJsonData.ssoApplicationInstances[this.appName].applicationId,
+            this.ssoOptions.applicationId,
             ['access_as_user'],
-            `https://login.microsoftonline.com/${ssoJsonData.ssoApplicationInstances[this.appName].tenantId}/v2.0`,
+            `https://login.microsoftonline.com/${this.ssoOptions.tenantId}/v2.0`,
         );
         this.auth.initialize();
     }
@@ -85,7 +79,7 @@ export class SSOService {
             this.app.use(bodyParser.urlencoded({ extended: true }));
             this.app.use(cors());
             this.app.use(morgan('dev'));
-            this.app.use(express.static('public'));
+            this.app.use(express.static('dist'));
             /* Turn off caching when debugging */
             this.app.use((req, res, next) => {
                 res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
@@ -105,8 +99,8 @@ export class SSOService {
 
                 // 1. We don't pass a resource parameter because the token endpoint is Azure AD V2.
                 // 2. Always ask for the minimal permissions that the application needs.
-                const graphToken = await this.auth.getGraphToken(req, this.options.graphApiScopes, this.options.applicationApiScopes);
-                const graphData = await MSGraphHelper.getGraphData(graphToken, this.options.graphApi, this.options.queryParam);
+                const graphToken = await this.auth.getGraphToken(req, this.ssoOptions.graphApiScopes, this.ssoOptions.applicationApiScopes);
+                const graphData = await MSGraphHelper.getGraphData(graphToken, this.ssoOptions.graphApi, this.ssoOptions.queryParam);
                 // If Microsoft Graph returns an error, such as invalid or expired token,
                 // relay it to the client.
                 if (graphData.code) {
@@ -138,6 +132,6 @@ export class SSOService {
     }
 
     public async getGraphToken(accessToken) {
-        return await this.auth.getGraphToken(accessToken, this.options.graphApiScopes, this.options.applicationApiScopes);
+        return await this.auth.getGraphToken(accessToken, this.ssoOptions.graphApiScopes, this.ssoOptions.applicationApiScopes);
     }
 }
