@@ -14,7 +14,7 @@ import { MSGraphHelper } from './msgraph-helper';
 import { UnauthorizedError } from './errors';
 import * as devCerts from 'office-addin-dev-certs';
 
-export interface ISSOptions {
+export interface ISsoOptions {
     applicationId: string;
     applicationSecret: string;
     tenantId: string;
@@ -27,9 +27,9 @@ export interface ISSOptions {
 export class SSOService {
     private app: express.Express;
     private auth: AuthModule;
-    private ssoOptions: ISSOptions;
+    private ssoOptions: ISsoOptions;
 
-    constructor(ssoOptions: ISSOptions) {
+    constructor(ssoOptions: ISsoOptions) {
         this.app = express();
         this.ssoOptions = ssoOptions;
 
