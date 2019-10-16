@@ -9,7 +9,7 @@
     "clean": "rimraf lib",
     "tsc": "tsc -p tsconfig.json",
     "tsc-w": "tsc -p tsconfig.json --watch",
-    "copy": "cpx \"src/scripts/**/*.*\" lib/scripts",
+    "copy": "cpx \"scripts/**/*.*\" lib/scripts",
     "start:server": "nodemon lib/server.js --debug=5858",
     "start:server:debug": "nodemon --inspect lib/server.js --debug=5858"
   },
@@ -28,6 +28,7 @@
     "cors": "2.8.5",
     "express": "4.17.1",
     "form-urlencoded": "3.0.0",
+    "generate-password": "^1.4.2",
     "isomorphic-fetch": "2.2.1",
     "jsonwebtoken": "8.4.0",
     "lodash": "4.17.13",
@@ -35,7 +36,6 @@
     "morgan": "1.9.1",
     "node-persist": "3.0.2",
     "nodemon": "1.18.9",
-    "generate-password": "^1.4.2",
     "random-base64-string": "1.0.1"
   },
   "devDependencies": {
