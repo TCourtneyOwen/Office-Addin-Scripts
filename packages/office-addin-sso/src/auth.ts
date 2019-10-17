@@ -218,8 +218,8 @@ ${signing_key}
         }
     }
 
-    public async getGraphToken(req: Request, graphApiScopes: [string], applicationScopeName: string) {
-        const { jwt } = this.verifyJWT(req, { scp: applicationScopeName });
+    public async getGraphToken(req: Request, graphApiScopes: [string]) {
+        const { jwt } = this.verifyJWT(req, { scp: this.applicationScopeName });
         return await this.acquireTokenOnBehalfOf(jwt, graphApiScopes);
     }
 }

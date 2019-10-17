@@ -100,7 +100,7 @@ export class SSOService {
 
                 // 1. We don't pass a resource parameter because the token endpoint is Azure AD V2.
                 // 2. Always ask for the minimal permissions that the application needs.
-                const graphToken = await this.auth.getGraphToken(req, this.ssoOptions.graphApiScopes, this.ssoOptions.applicationApiScopeName);
+                const graphToken = await this.auth.getGraphToken(req, this.ssoOptions.graphApiScopes);
                 const graphData = await MSGraphHelper.getGraphData(graphToken, this.ssoOptions.graphApi, this.ssoOptions.queryParam);
                 // If Microsoft Graph returns an error, such as invalid or expired token,
                 // relay it to the client.
@@ -133,6 +133,6 @@ export class SSOService {
     }
 
     public async getGraphToken(accessToken) {
-        return await this.auth.getGraphToken(accessToken, this.ssoOptions.graphApiScopes, this.ssoOptions.applicationApiScopeName);
+        return await this.auth.getGraphToken(accessToken, this.ssoOptions.graphApiScopes);
     }
 }
