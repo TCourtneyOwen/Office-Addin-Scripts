@@ -8,16 +8,15 @@ import * as https from 'https';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
+import * as devCerts from 'office-addin-dev-certs';
 import * as morgan from 'morgan';
 import { AuthModule } from './auth';
 import { MSGraphHelper } from './msgraph-helper';
 import { UnauthorizedError } from './errors';
-import * as devCerts from 'office-addin-dev-certs';
+import { getSecretFromCredentialStore, readSsoJsonData } from './ssoDataSettings';
 
 export interface ISsoOptions {
-    applicationId: string;
-    applicationSecret: string;
-    tenantId: string;
+    applicationName: string;
     multiTenant: boolean;
     applicationApiScopeName: string;
     graphApi: string;
@@ -28,22 +27,27 @@ export interface ISsoOptions {
 export class SSOService {
     private app: express.Express;
     private auth: AuthModule;
+    private port: number;
     private ssoOptions: ISsoOptions;
 
-    constructor(ssoOptions: ISsoOptions) {
+    constructor(ssoOptions: ISsoOptions, port: number) {
         this.app = express();
+        this.port = port;
         this.ssoOptions = ssoOptions;
 
+        const ssoJsonData = readSsoJsonData();
+        const appSecret = getSecretFromCredentialStore(this.ssoOptions.applicationName);
+
         this.auth = new AuthModule(
-            this.ssoOptions.applicationId,
-            this.ssoOptions.applicationSecret,
+            ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].applicationId,
+            appSecret,
             'common',
             'https://login.microsoftonline.com',
             this.ssoOptions.multiTenant ? 'v2.0/.well-known/openid-configuration' : '.well-known/openid-configuration',
             '/oauth2/v2.0/token',
-            this.ssoOptions.applicationId,
+            ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].applicationId,
             this.ssoOptions.applicationApiScopeName,
-            `https://login.microsoftonline.com/${this.ssoOptions.tenantId}/v2.0`,
+            `https://login.microsoftonline.com/${ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].tenantId}/v2.0`,
         );
         this.auth.initialize();
     }
@@ -89,7 +93,7 @@ export class SSOService {
                 next();
             });
 
-            this.startServer(this.app, env);
+            this.startServer(this.app, this.port);
 
             /**
              * HTTP GET: /api/values
@@ -122,14 +126,9 @@ export class SSOService {
         });
     }
 
-    private async startServer(app, env: string) {
-        if (env === 'development') {
-            const options = await devCerts.getHttpsServerOptions();
-            https.createServer(options, app).listen(3000, () => console.log('Server running on 3000'));
-        }
-        else {
-            app.listen(process.env.port || 1337, () => console.log(`Server listening on port ${process.env.port}`));
-        }
+    private async startServer(app, port: number) {
+        const options = await devCerts.getHttpsServerOptions();
+        https.createServer(options, app).listen(port, () => console.log(`Server running on ${port}`));
     }
 
     public async getGraphToken(accessToken) {

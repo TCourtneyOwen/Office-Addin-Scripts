@@ -3,7 +3,7 @@ import * as defaults from './defaults';
 import * as fs from 'fs';
 import * as passwordGenerator from "generate-password";
 import { modifyManifestFile } from 'office-addin-manifest';
-import { writeApplicationJsonData } from './ssoDataSettings';
+import { addSecretToCredentialStore, writeApplicationJsonData } from './ssoDataSettings';
 
 export async function configureSSOApplication(manifestPath: string, ssoAppName: string) {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
@@ -18,7 +18,8 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
         console.log('Login was successful!');
         const secret = passwordGenerator.generate({ length: 32, numbers: true, uppercase: true, strict: true });
         const applicationJson: any = await createNewApplication(ssoAppName, secret);
-        writeApplicationJsonData(applicationJson, userJson, secret);
+        writeApplicationJsonData(applicationJson, userJson);
+        addSecretToCredentialStore(ssoAppName, secret);
         updateProjectManifest(manifestPath, applicationJson.appId);
         console.log("Outputting Azure application info:\n");
         console.log(applicationJson);
@@ -62,7 +63,6 @@ async function grantAdminContent(applicationJson: any) {
         let appReady: boolean = false;
         while (appReady === false) {
             appReady = await applicationReady(applicationJson);
-            console.log(`app ready state is ${appReady}`);
         }
         let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
