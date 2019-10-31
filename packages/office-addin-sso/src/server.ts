@@ -13,15 +13,19 @@ import * as morgan from 'morgan';
 import { AuthModule } from './auth';
 import { MSGraphHelper } from './msgraph-helper';
 import { UnauthorizedError } from './errors';
-import { getSecretFromCredentialStore, readSsoJsonData } from './ssoDataSettings';
+import { getSecretFromCredentialStore } from './ssoDataSettings';
+
+
 
 export interface ISsoOptions {
+    applicationId: string;
     applicationName: string;
     multiTenant: boolean;
     applicationApiScopeName: string;
     graphApi: string;
     graphApiScopes: [string];
     queryParam: string;
+    tenantId: string;
 }
 
 export class SSOService {
@@ -35,19 +39,18 @@ export class SSOService {
         this.port = port;
         this.ssoOptions = ssoOptions;
 
-        const ssoJsonData = readSsoJsonData();
         const appSecret = getSecretFromCredentialStore(this.ssoOptions.applicationName);
 
         this.auth = new AuthModule(
-            ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].applicationId,
+            this.ssoOptions.applicationId,
             appSecret,
             'common',
             'https://login.microsoftonline.com',
             this.ssoOptions.multiTenant ? 'v2.0/.well-known/openid-configuration' : '.well-known/openid-configuration',
             '/oauth2/v2.0/token',
-            ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].applicationId,
+            this.ssoOptions.applicationId,
             this.ssoOptions.applicationApiScopeName,
-            `https://login.microsoftonline.com/${ssoJsonData.ssoApplicationInstances[this.ssoOptions.applicationName].tenantId}/v2.0`,
+            `https://login.microsoftonline.com/${this.ssoOptions.tenantId}/v2.0`,
         );
         this.auth.initialize();
     }

@@ -44,60 +44,30 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
     }
 }
 
-export function writeApplicationJsonData(applicationJson: any, userJson: any) {
+export function writeApplicationData(applicationId) {
     try {
-        if (fs.existsSync(defaults.ssoDataJsonFilePath) && fs.readFileSync(defaults.ssoDataJsonFilePath, 'utf8') !== '' && fs.readFileSync(defaults.ssoDataJsonFilePath, 'utf8') !== 'undefined') {
-            if (ssoApplicationExists(applicationJson.displayName)) {
-                modifySsoJsonData(applicationJson, userJson);
-            } else {
-                const ssoJsonData = readSsoJsonData();
-                ssoJsonData.ssoApplicationInstances[applicationJson.displayName] = { applicationId: String, applicationSecret: String, tenantId: String };
-                ssoJsonData.ssoApplicationInstances[applicationJson.displayName].applicationId = applicationJson.appId;
-                ssoJsonData.ssoApplicationInstances[applicationJson.displayName].tenantId = userJson[0].tenantId;
-                fs.writeFileSync(defaults.ssoDataJsonFilePath, JSON.stringify((ssoJsonData), null, 2));
-            }
+        // Update .ENV file
+        if (fs.existsSync(defaults.ssoDataFilePath)) {
+            const appData = fs.readFileSync(defaults.ssoDataFilePath, 'utf8');
+            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
+            fs.writeFileSync(defaults.ssoDataFilePath, updatedAppData);
         } else {
-            let ssoJsonData = {};
-            ssoJsonData[applicationJson.displayName] = applicationJson.displayName;
-            ssoJsonData = { ssoApplicationInstances: ssoJsonData };
-            ssoJsonData = { ssoApplicationInstances: { [applicationJson.displayName]: { ['applicationId']: applicationJson.appId, ['tenantId']: userJson[0].tenantId } } };
-            fs.writeFileSync(defaults.ssoDataJsonFilePath, JSON.stringify((ssoJsonData), null, 2));
+            throw new Error(`${defaults.ssoDataFilePath} does not exist`)
         }
     } catch (err) {
-        throw new Error(`Unable to write SSO application data to ${defaults.ssoDataJsonFilePath}. \n${err}`);
+        throw new Error(`Unable to write SSO application data to ${defaults.ssoDataFilePath}. \n${err}`);
     }
-}
 
-async function modifySsoJsonData(applicationJson: any, userJson: any): Promise<void> {
     try {
-        const ssoJsonData = readSsoJsonData();
-        if (ssoJsonData && ssoApplicationExists(applicationJson.displayName)) {
-            ssoJsonData.ssoApplicationInstances[applicationJson.displayName].applicationId = applicationJson.appId;
-            ssoJsonData.ssoApplicationInstances[applicationJson.displayName].tenantId = userJson[0].tenantId;
-            fs.writeFileSync(defaults.ssoDataJsonFilePath, JSON.stringify((ssoJsonData), null, 2));
+        // Update fallbackAuthDialog.js
+        if (fs.existsSync(defaults.fallbackAuthDialogFilePath)) {
+            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogFilePath, 'utf8');
+            const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
+            fs.writeFileSync(defaults.fallbackAuthDialogFilePath, updatedSrcFile);
         } else {
-            throw new Error(`SSO application ${applicationJson.displayName} doesn't exist in settings file`);
+            throw new Error(`${defaults.fallbackAuthDialogFilePath} does not exist`)
         }
     } catch (err) {
-        throw new Error(`Unable to modify ${defaults.ssoDataJsonFilePath}. \n${err}`);
+        throw new Error(`Unable to write SSO application data to ${defaults.fallbackAuthDialogFilePath}. \n${err}`);
     }
-}
-
-// /**
-//  * Reads data from the usage data json config file
-//  * @returns Parsed object from json file if it exists
-//  */
-export function readSsoJsonData(): any {
-    if (fs.existsSync(defaults.ssoDataJsonFilePath)) {
-        const jsonData = fs.readFileSync(defaults.ssoDataJsonFilePath, 'utf8');
-        return JSON.parse(jsonData.toString());
-    }
-}
-
-export function ssoApplicationExists(ssoAppName: string): boolean {
-    if (fs.existsSync(defaults.ssoDataJsonFilePath) && fs.readFileSync(defaults.ssoDataJsonFilePath, 'utf8') !== '' && fs.readFileSync(defaults.ssoDataJsonFilePath, 'utf8') !== 'undefined') {
-        const jsonData = readSsoJsonData();
-        return Object.getOwnPropertyNames(jsonData.ssoApplicationInstances).includes(ssoAppName);
-    }
-    return false;
 }
