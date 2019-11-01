@@ -22,7 +22,7 @@ export async function configureSSOApplication(manifestPath: string, ssoAppName: 
         const manifestInfo = await manifest.readManifestFile(manifestPath);
         const secret = passwordGenerator.generate({ length: 32, numbers: true, uppercase: true, strict: true });
         const applicationJson: any = await createNewApplication(manifestInfo.displayName, secret);
-        writeApplicationData(applicationJson);
+        writeApplicationData(applicationJson.appId, userJson[0].tenantId);
         addSecretToCredentialStore(manifestInfo.displayName, secret);
         updateProjectManifest(manifestPath, applicationJson.appId);
         await logoutAzure();

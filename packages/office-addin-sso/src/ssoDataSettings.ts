@@ -44,13 +44,13 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
     }
 }
 
-export function writeApplicationData(applicationId) {
+export function writeApplicationData(applicationId, tenantId) {
     let isTypecript: boolean = false;
     try {
         // Update .ENV file
         if (fs.existsSync(defaults.ssoDataFilePath)) {
             const appData = fs.readFileSync(defaults.ssoDataFilePath, 'utf8');
-            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
+            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`).replace('TENANT_ID=', `TENANT_ID=${tenantId}`);
             fs.writeFileSync(defaults.ssoDataFilePath, updatedAppData);
         } else {
             throw new Error(`${defaults.ssoDataFilePath} does not exist`)

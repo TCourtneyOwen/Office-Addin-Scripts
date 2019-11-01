@@ -2,8 +2,8 @@ import * as path from 'path';
 
 export const azCliInstallCommandPath: string = path.resolve(`${__dirname}/scripts/azCliInstallCmd.ps1`);
 export const azRestpCreateCommandPath: string = path.resolve(`${__dirname}/scripts/azRestAppCreateCmd.txt`);
-export const fallbackAuthDialogTypescriptFilePath = path.resolve(`${process.cwd()}/src/taskpane/fallbackAuthDialog.ts`);
-export const fallbackAuthDialogJavascriptFilePath = path.resolve(`${process.cwd()}/src/taskpane/fallbackAuthDialog.js`);
+export const fallbackAuthDialogTypescriptFilePath = path.resolve(`${process.cwd()}/src/taskpane/fallbackAuthTaskpane.ts`);
+export const fallbackAuthDialogJavascriptFilePath = path.resolve(`${process.cwd()}/src/taskpane/fallbackAuthTaskpane.js`);
 export const getApplicationInfoCommandPath: string = path.resolve(`${__dirname}/scripts/azGetApplicationInfoCmd.txt`);
 export const getInstalledAppsPath: string = path.resolve(`${__dirname}/scripts/getInstalledApps.ps1`);
 export const grantAdminConsentCommandPath = path.resolve(`${__dirname}/scripts/azGrantAdminConsentCmd.txt`);
