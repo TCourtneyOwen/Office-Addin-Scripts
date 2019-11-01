@@ -20,12 +20,9 @@ import { getSecretFromCredentialStore } from './ssoDataSettings';
 export interface ISsoOptions {
     applicationId: string;
     applicationName: string;
-    multiTenant: boolean;
-    applicationApiScopeName: string;
-    graphApi: string;
     graphApiScopes: [string];
     queryParam: string;
-    tenantId: string;
+    tenantId;
 }
 
 export class SSOService {
@@ -44,13 +41,7 @@ export class SSOService {
         this.auth = new AuthModule(
             this.ssoOptions.applicationId,
             appSecret,
-            'common',
-            'https://login.microsoftonline.com',
-            this.ssoOptions.multiTenant ? 'v2.0/.well-known/openid-configuration' : '.well-known/openid-configuration',
-            '/oauth2/v2.0/token',
-            this.ssoOptions.applicationId,
-            this.ssoOptions.applicationApiScopeName,
-            `https://login.microsoftonline.com/${this.ssoOptions.tenantId}/v2.0`,
+            this.ssoOptions.tenantId
         );
         this.auth.initialize();
     }
@@ -108,7 +99,7 @@ export class SSOService {
                 // 1. We don't pass a resource parameter because the token endpoint is Azure AD V2.
                 // 2. Always ask for the minimal permissions that the application needs.
                 const graphToken = await this.auth.getGraphToken(req, this.ssoOptions.graphApiScopes);
-                const graphData = await MSGraphHelper.getGraphData(graphToken, this.ssoOptions.graphApi, this.ssoOptions.queryParam);
+                const graphData = await MSGraphHelper.getGraphData(graphToken, '/me/drive/root/children', this.ssoOptions.queryParam);
                 // If Microsoft Graph returns an error, such as invalid or expired token,
                 // relay it to the client.
                 if (graphData.code) {

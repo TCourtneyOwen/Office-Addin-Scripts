@@ -11,6 +11,9 @@ import form from 'form-urlencoded';
 import * as moment from 'moment';
 import { ServerStorage } from './server-storage';
 import { ServerError, UnauthorizedError } from './errors';
+const stsDomain = 'https://login.microsoftonline.com';
+const tenant = 'common';
+const tokenURLSegment = 'oauth2/v2.0/token';
 
 export class AuthModule {
     keys: { [kid: string]: string };
@@ -20,25 +23,12 @@ export class AuthModule {
      * Initializes the AuthHelper
      * @param clientId The registration ID of the application that needs access to a resource.
      * @param clientSecret The registration secret of the application that needs access to a resource.
-     * @param tenant The tenant where the user accounts are to be looked up.
-     * For microsoft.com accounts or for MSA accounts its "common".
-     * @param stsDomain The domain of the secure token service (STS).
-     * @param discoveryURLsegment The relative URL where the STS provides token signing keys.
-     * @param tokenURLsegment The relative URL where the STS provides tokens.
-     * @param audience The audience to whom the access token is given; that is, the resource.
-     * @param scopes The permissions the application needs to the resource.
-     * @param issuer The issuer that provided the token itself.
+     * @param tenantId The tenant ID of the application that needs access to a resource.
      */
     constructor(
         public clientId: string,
         public clientSecret: string,
-        public tenant: string,
-        public stsDomain: string,
-        public discoveryURLsegment: string,
-        public tokenURLsegment: string,
-        public audience: string,
-        public applicationScopeName: string,
-        public issuer: string
+        public tenantId: string
     ) {
     }
 
@@ -64,7 +54,7 @@ export class AuthModule {
      */
     private async downloadSigningKeys() {
         try {
-            const urlRes = await fetch(`${this.stsDomain}/${this.tenant}/${this.discoveryURLsegment}`, {
+            const urlRes = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -125,7 +115,7 @@ ${signing_key}
                 throw new UnauthorizedError('Malformed Authorization header.');
             }
 
-            jsonwebtoken.verify(jwt, this.keys[header.kid], { audience: this.audience, issuer: this.issuer });
+            jsonwebtoken.verify(jwt, this.keys[header.kid], { audience: this.clientId, issuer: this.tenantId });
             return { user: payload, jwt };
         }
         catch (exception) {
@@ -188,7 +178,7 @@ ${signing_key}
                 finalParams = v2Params;
             }
 
-            const res = await fetch(`${this.stsDomain}/${this.tenant}/${this.tokenURLsegment}`, {
+            const res = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
                 method: 'POST',
                 body: form(finalParams),
                 headers: {
@@ -219,7 +209,7 @@ ${signing_key}
     }
 
     public async getGraphToken(req: Request, graphApiScopes: [string]) {
-        const { jwt } = this.verifyJWT(req, { scp: this.applicationScopeName });
+        const { jwt } = this.verifyJWT(req, { scp: 'access_as_user' });
         return await this.acquireTokenOnBehalfOf(jwt, graphApiScopes);
     }
 }
