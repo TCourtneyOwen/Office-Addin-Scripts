@@ -11,6 +11,7 @@ import form from 'form-urlencoded';
 import * as moment from 'moment';
 import { ServerStorage } from './server-storage';
 import { ServerError, UnauthorizedError } from './errors';
+const discoveryUrlSegment = '.well-known/openid-configuration';
 const stsDomain = 'https://login.microsoftonline.com';
 const tenant = 'common';
 const tokenURLSegment = 'oauth2/v2.0/token';
@@ -54,7 +55,7 @@ export class AuthModule {
      */
     private async downloadSigningKeys() {
         try {
-            const urlRes = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
+            const urlRes = await fetch(`${stsDomain}/${tenant}/${discoveryUrlSegment}`, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
