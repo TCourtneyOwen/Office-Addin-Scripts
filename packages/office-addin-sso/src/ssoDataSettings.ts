@@ -45,6 +45,7 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
 }
 
 export function writeApplicationData(applicationId) {
+    let isTypecript: boolean = false;
     try {
         // Update .ENV file
         if (fs.existsSync(defaults.ssoDataFilePath)) {
@@ -60,14 +61,21 @@ export function writeApplicationData(applicationId) {
 
     try {
         // Update fallbackAuthDialog.js
-        if (fs.existsSync(defaults.fallbackAuthDialogFilePath)) {
-            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogFilePath, 'utf8');
+
+        if (fs.existsSync(defaults.fallbackAuthDialogTypescriptFilePath)) {
+            isTypecript = true;
+            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogTypescriptFilePath, 'utf8');
             const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(defaults.fallbackAuthDialogFilePath, updatedSrcFile);
-        } else {
-            throw new Error(`${defaults.fallbackAuthDialogFilePath} does not exist`)
+            fs.writeFileSync(defaults.fallbackAuthDialogTypescriptFilePath, updatedSrcFile);
+        } else if (fs.existsSync(defaults.fallbackAuthDialogJavascriptFilePath)) {
+            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogJavascriptFilePath, 'utf8');
+            const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
+            fs.writeFileSync(defaults.fallbackAuthDialogJavascriptFilePath, updatedSrcFile);
+        }
+         else {
+            throw new Error(`${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath} does not exist`)
         }
     } catch (err) {
-        throw new Error(`Unable to write SSO application data to ${defaults.fallbackAuthDialogFilePath}. \n${err}`);
+        throw new Error(`Unable to write SSO application data to ${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath}. \n${err}`);
     }
 }
