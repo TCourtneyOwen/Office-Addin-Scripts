@@ -11,11 +11,11 @@ commander.name('office-addin-sso');
 commander.version(process.env.npm_package_version || '(version not available)');
 
 commander
-    .command('configure <manifest-path> <sso-app-name>')
+    .command('configure <manifest-path>')
     .action(commands.configureSSO);
 
 commander
-    .command('start <sso-app-name>')
+    .command('start <manifest-path>')
     .action(commands.startSSOService);
 
 // if the command is not known, display an error

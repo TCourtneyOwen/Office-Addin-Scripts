@@ -6,7 +6,7 @@ import * as manifest from 'office-addin-manifest';
 import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSettings';
 require('dotenv').config();
 
-export async function configureSSOApplication(manifestPath: string, ssoAppName: string) {
+export async function configureSSOApplication(manifestPath: string) {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
     const cliInstalled = await azureCliInstalled();
     if(!cliInstalled) {
