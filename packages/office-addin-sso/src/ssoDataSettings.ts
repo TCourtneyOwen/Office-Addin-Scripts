@@ -13,7 +13,7 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string): 
                 break;
             case "darwin":
                 console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain`);
-                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s ${ssoAppName} -w ${secret}`;
+                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret}`;
                 execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
                 break;
             default:
@@ -44,13 +44,13 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
     }
 }
 
-export function writeApplicationData(applicationId, tenantId) {
+export function writeApplicationData(applicationId) {
     let isTypecript: boolean = false;
     try {
         // Update .ENV file
         if (fs.existsSync(defaults.ssoDataFilePath)) {
             const appData = fs.readFileSync(defaults.ssoDataFilePath, 'utf8');
-            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`).replace('TENANT_ID=', `TENANT_ID=${tenantId}`);
+            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
             fs.writeFileSync(defaults.ssoDataFilePath, updatedAppData);
         } else {
             throw new Error(`${defaults.ssoDataFilePath} does not exist`)

@@ -1,7 +1,6 @@
 import * as childProcess from 'child_process';
 import * as defaults from './defaults';
 import * as fs from 'fs';
-import * as passwordGenerator from "generate-password";
 import * as manifest from 'office-addin-manifest';
 import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSettings';
 require('dotenv').config();
@@ -12,7 +11,9 @@ export async function configureSSOApplication(manifestPath: string) {
     if(!cliInstalled) {
         console.log("Azure CLI is not installed.  Installing now before proceeding");
         await installAzureCli();
-        console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
+        if (process.platform === "win32") {
+            console.log('Please close your command shell, reopen and run configure-sso again.  This is neccessary to register the path to the Azure CLI');
+        }
         return;
     }
 
@@ -20,13 +21,18 @@ export async function configureSSOApplication(manifestPath: string) {
     if (userJson) {
         console.log('Login was successful!');
         const manifestInfo = await manifest.readManifestFile(manifestPath);
-        const secret = passwordGenerator.generate({ length: 32, numbers: true, uppercase: true, strict: true });
-        const applicationJson: any = await createNewApplication(manifestInfo.displayName, secret);
-        writeApplicationData(applicationJson.appId, userJson[0].tenantId);
-        addSecretToCredentialStore(manifestInfo.displayName, secret);
+
+        // Register application
+        const applicationJson: any = await createNewApplication(manifestInfo.displayName);
+
+        // Write application data to manifest and .ENV file
+        writeApplicationData(applicationJson.appId);
         updateProjectManifest(manifestPath, applicationJson.appId);
+
+        // Log out of Azure
         await logoutAzure();
-        console.log("Outputting Azure application info:\n");
+
+        // Output application definition to console
         console.log(applicationJson);
     }
     else {
@@ -34,17 +40,40 @@ export async function configureSSOApplication(manifestPath: string) {
     }
 }
 
-async function createNewApplication(ssoAppName: string, secret: string): Promise<Object> {
+async function createNewApplication(ssoAppName: string): Promise<Object> {
     try {
         console.log('Registering new application in Azure');
         let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
-        const re = new RegExp('{SSO-AppName}', 'g');
-        azRestNewAppCommand = azRestNewAppCommand.replace(re, ssoAppName).replace('{SSO-Secret}', secret).replace('{PORT}', process.env.PORT);
-        const applicationJson: Object = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */, true /* configureSSO */);
+        const reName = new RegExp('{SSO-AppName}', 'g');
+        const rePort = new RegExp('{PORT}', 'g');
+        azRestNewAppCommand = azRestNewAppCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
+
+        const applicationJson: Object = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */);
+
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
+            // Set application IdentifierUri
+            await setIdentifierUri(applicationJson);
+
+            // Set application sign-in audience
+            await setSignInAudience(applicationJson);
+
+            // Grant admin consent for application
+            await grantAdminContent(applicationJson);
+
+            // Set implicit grant permissions for application
+            await setImplicitGrantPermissions(applicationJson);
+
+            // Create an application secret and add to the credential store
+            const secretJson = await setApplicationSecret(applicationJson);
+            addSecretToCredentialStore(ssoAppName, secretJson.secretText);
+
+            return applicationJson;
+        } else {
+            console.log("Failed to register application");
+            return undefined;
         }
-        return applicationJson;
+
     } catch (err) {
         throw new Error(`Unable to register new application ${ssoAppName}. \n${err}`);
     }
@@ -54,7 +83,7 @@ async function applicationReady(applicationJson: any): Promise<boolean> {
     try {
         let azRestCommand = await fs.readFileSync(defaults.getApplicationInfoCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
-        const appJson: any = await promiseExecuteCommand(azRestCommand);
+        const appJson: any = await promiseExecuteCommand(azRestCommand, true /* returnJson */, true /* expectError */);
         return appJson !== "";
     } catch (err) {
         throw new Error(`Unable to get application info for ${applicationJson.displayName}. \n${err}`);
@@ -66,8 +95,10 @@ async function grantAdminContent(applicationJson: any) {
         console.log('Granting admin consent');
         // Check to see if the application is available before granting admin consent
         let appReady: boolean = false;
-        while (appReady === false) {
+        let counter: number = 0;
+        while (appReady === false && counter <= 20) {
             appReady = await applicationReady(applicationJson);
+            counter++;
         }
         let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
@@ -126,19 +157,18 @@ async function logoutAzure() {
     return await promiseExecuteCommand('az logout');
 }
 
-export async function promiseExecuteCommand(cmd: string, returnJson: boolean = true, configureSSO: boolean = false): Promise<any> {
+export async function promiseExecuteCommand(cmd: string, returnJson: boolean = true, expectError: boolean = false): Promise<any> {
     return new Promise((resolve, reject) => {
         try {
             childProcess.exec(cmd, async (err, stdout, stderr) => {
+                if (err && !expectError) {
+                    console.log(stderr);
+                    reject(stderr);
+                }
+                
                 let results = stdout;
                 if (results !== '' && returnJson) {
                     results = JSON.parse(results);
-                }
-                if (configureSSO) {
-                    await setIdentifierUri(results);
-                    await setSignInAudience(results);
-                    await grantAdminContent(results);
-                    await setImplicitGrantPermissions(results);
                 }
                 resolve(results);
             });
@@ -146,6 +176,18 @@ export async function promiseExecuteCommand(cmd: string, returnJson: boolean = t
             reject(err);
         }
     });
+}
+
+async function setApplicationSecret(applicationJson: any) {
+    try {
+        console.log('Setting identifierUri');
+        let azRestCommand = await fs.readFileSync(defaults.azAddSecretCommandPath, 'utf8');
+        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
+        const secretJson = await promiseExecuteCommand(azRestCommand);
+        return secretJson;
+    } catch (err) {
+        throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);
+    }
 }
 
 async function setIdentifierUri(applicationJson: any) {
@@ -162,6 +204,11 @@ async function setIdentifierUri(applicationJson: any) {
 async function setImplicitGrantPermissions(applicationJson) {
     console.log('Setting implicit grant permissions');
     try {
+        // Check to see if the application is available before granting admin consent
+        let appReady: boolean = false;
+        while (appReady === false) {
+            appReady = await applicationReady(applicationJson);
+        }
         const oathAllowImplictFlowCommand = `az ad app update --id ${applicationJson.id} --oauth2-allow-implicit-flow true`;
         await promiseExecuteCommand(oathAllowImplictFlowCommand);
     } catch (err) {
