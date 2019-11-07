@@ -27,7 +27,7 @@ export class AuthRouter {
                     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                     assertion: jwt,
                     requested_token_use: 'on_behalf_of',
-                    scope: ['Files.Read.All'].join(' ')
+                    scope: ['User.Read'].join(' ')
                 };
 
                 const stsDomain = 'https://login.microsoftonline.com';
