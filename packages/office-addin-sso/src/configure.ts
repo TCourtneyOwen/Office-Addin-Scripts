@@ -66,6 +66,7 @@ async function createNewApplication(ssoAppName: string): Promise<Object> {
 
             // Create an application secret and add to the credential store
             const secretJson = await setApplicationSecret(applicationJson);
+            console.log(`App secret is ${secretJson.secretText}`);
             addSecretToCredentialStore(ssoAppName, secretJson.secretText);
 
             return applicationJson;
