@@ -62,8 +62,8 @@ export class App {
             return res.sendfile('taskpane.html');
         }));
 
-        this.appInstance.get('/fallbackAuthDialog.html', (async (req, res) => {
-            return res.sendfile('fallbackAuthDialog.html');
+        this.appInstance.get('/fallbackauthdialog.html', (async (req, res) => {
+            return res.sendfile('fallbackauthdialog.html');
         }));
 
         this.appInstance.get('/getuserdata', async function (req, res, next) {
