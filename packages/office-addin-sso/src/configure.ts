@@ -61,9 +61,6 @@ async function createNewApplication(ssoAppName: string): Promise<Object> {
             // Grant admin consent for application
             await grantAdminContent(applicationJson);
 
-            // Set implicit grant permissions for application
-            await setImplicitGrantPermissions(applicationJson);
-
             // Create an application secret and add to the credential store
             const secretJson = await setApplicationSecret(applicationJson);
             console.log(`App secret is ${secretJson.secretText}`);
@@ -201,22 +198,6 @@ async function setIdentifierUri(applicationJson: any) {
         throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);
     }
 }
-
-async function setImplicitGrantPermissions(applicationJson) {
-    console.log('Setting implicit grant permissions');
-    try {
-        // Check to see if the application is available before granting admin consent
-        let appReady: boolean = false;
-        while (appReady === false) {
-            appReady = await applicationReady(applicationJson);
-        }
-        const oathAllowImplictFlowCommand = `az ad app update --id ${applicationJson.id} --oauth2-allow-implicit-flow true`;
-        await promiseExecuteCommand(oathAllowImplictFlowCommand);
-    } catch (err) {
-        throw new Error(`Unable to set oauth2AllowImplicitFlow for ${applicationJson.displayName}. \n${err}`);
-    }   
-}
-
 
 async function setSignInAudience(applicationJson: any) {
     try {
