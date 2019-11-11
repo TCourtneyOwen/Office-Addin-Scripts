@@ -9,7 +9,7 @@
     "clean": "rimraf lib",
     "tsc": "tsc -p tsconfig.json",
     "tsc-w": "tsc -p tsconfig.json --watch",
-    "copy": "cpx \"scripts/**/*.*\" lib/scripts && cpx \"views/**/*.*\" lib/views",
+    "copy": "cpx \"scripts/**/*.*\" lib/scripts && cpx \"src/views/**/*.*\" lib/views",
     "start:server": "nodemon lib/server.js --debug=5858",
     "start:server:debug": "nodemon --inspect lib/server.js --debug=5858"
   },

@@ -3,6 +3,7 @@ import * as defaults from './defaults';
 import * as fs from 'fs';
 import * as manifest from 'office-addin-manifest';
 import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSettings';
+import { ManifestInfo } from 'office-addin-manifest';
 require('dotenv').config();
 
 export async function configureSSOApplication(manifestPath: string) {
@@ -17,10 +18,10 @@ export async function configureSSOApplication(manifestPath: string) {
         return;
     }
 
-    const userJson = await logIntoAzure();
+    const userJson: Object = await logIntoAzure();
     if (userJson) {
         console.log('Login was successful!');
-        const manifestInfo = await manifest.readManifestFile(manifestPath);
+        const manifestInfo: ManifestInfo = await manifest.readManifestFile(manifestPath);
 
         // Register application
         const applicationJson: any = await createNewApplication(manifestInfo.displayName);
@@ -43,12 +44,12 @@ export async function configureSSOApplication(manifestPath: string) {
 async function createNewApplication(ssoAppName: string): Promise<Object> {
     try {
         console.log('Registering new application in Azure');
-        let azRestNewAppCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
+        let azRestCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
         const reName = new RegExp('{SSO-AppName}', 'g');
         const rePort = new RegExp('{PORT}', 'g');
-        azRestNewAppCommand = azRestNewAppCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
+        azRestCommand = azRestCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
 
-        const applicationJson: Object = await promiseExecuteCommand(azRestNewAppCommand, true /* returnJson */);
+        const applicationJson: Object = await promiseExecuteCommand(azRestCommand, true /* returnJson */);
 
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
@@ -62,9 +63,9 @@ async function createNewApplication(ssoAppName: string): Promise<Object> {
             await grantAdminContent(applicationJson);
 
             // Create an application secret and add to the credential store
-            const secretJson = await setApplicationSecret(applicationJson);
-            console.log(`App secret is ${secretJson.secretText}`);
-            addSecretToCredentialStore(ssoAppName, secretJson.secretText);
+            const secret: string = await setApplicationSecret(applicationJson);
+            console.log(`App secret is ${secret}`);
+            addSecretToCredentialStore(ssoAppName, secret);
 
             return applicationJson;
         } else {
@@ -79,9 +80,8 @@ async function createNewApplication(ssoAppName: string): Promise<Object> {
 
 async function applicationReady(applicationJson: any): Promise<boolean> {
     try {
-        let azRestCommand = await fs.readFileSync(defaults.getApplicationInfoCommandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
-        const appJson: any = await promiseExecuteCommand(azRestCommand, true /* returnJson */, true /* expectError */);
+        const azRestCommand: string = `az ad app show --id ${applicationJson.appId}`
+        const appJson: Object = await promiseExecuteCommand(azRestCommand, true /* returnJson */, true /* expectError */);
         return appJson !== "";
     } catch (err) {
         throw new Error(`Unable to get application info for ${applicationJson.displayName}. \n${err}`);
@@ -98,8 +98,7 @@ async function grantAdminContent(applicationJson: any) {
             appReady = await applicationReady(applicationJson);
             counter++;
         }
-        let azRestCommand = fs.readFileSync(defaults.grantAdminConsentCommandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_ID>', applicationJson.appId);
+        const azRestCommand: string = `az ad app permission admin-consent --id ${applicationJson.appId}`;
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
         throw new Error(`Unable to set grant admin consent for ${applicationJson.displayName}. \n${err}`);
@@ -110,13 +109,13 @@ export async function azureCliInstalled(): Promise<boolean> {
     try {
         switch (process.platform) {
             case "win32":
-                const appsInstalledWindowsCommand = `powershell -ExecutionPolicy Bypass -File "${defaults.getInstalledAppsPath}"`;
-                const appsWindows = await promiseExecuteCommand(appsInstalledWindowsCommand);
+                const appsInstalledWindowsCommand: string = `powershell -ExecutionPolicy Bypass -File "${defaults.getInstalledAppsPath}"`;
+                const appsWindows: any = await promiseExecuteCommand(appsInstalledWindowsCommand);
                 return appsWindows.filter(app => app.DisplayName === 'Microsoft Azure CLI').length > 0
             case "darwin":
                 const appsInstalledMacCommand = 'brew list';
-                const appsMac: string = await promiseExecuteCommand(appsInstalledMacCommand, false /* returnJson */);
-                return appsMac.includes('azure-cli');;;
+                const appsMac: Object | string = await promiseExecuteCommand(appsInstalledMacCommand, false /* returnJson */);
+                return appsMac.hasOwnProperty('azure-cli');
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);
         }
@@ -145,17 +144,17 @@ export async function installAzureCli() {
     }
 }
 
-export async function logIntoAzure() {
+export async function logIntoAzure(): Promise<Object> {
     console.log('Opening browser for authentication to Azure. Enter valid Azure credentials');
     return await promiseExecuteCommand('az login --allow-no-subscriptions');
 }
 
-async function logoutAzure() {
+async function logoutAzure(): Promise<Object> {
     console.log('Logging out of Azure now');
     return await promiseExecuteCommand('az logout');
 }
 
-export async function promiseExecuteCommand(cmd: string, returnJson: boolean = true, expectError: boolean = false): Promise<any> {
+export async function promiseExecuteCommand(cmd: string, returnJson: boolean = true, expectError: boolean = false): Promise<Object | string> {
     return new Promise((resolve, reject) => {
         try {
             childProcess.exec(cmd, async (err, stdout, stderr) => {
@@ -176,13 +175,13 @@ export async function promiseExecuteCommand(cmd: string, returnJson: boolean = t
     });
 }
 
-async function setApplicationSecret(applicationJson: any) {
+async function setApplicationSecret(applicationJson: any): Promise<string> {
     try {
         console.log('Setting identifierUri');
-        let azRestCommand = await fs.readFileSync(defaults.azAddSecretCommandPath, 'utf8');
+        let azRestCommand: string = await fs.readFileSync(defaults.azAddSecretCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
-        const secretJson = await promiseExecuteCommand(azRestCommand);
-        return secretJson;
+        const secretJson: any = await promiseExecuteCommand(azRestCommand);
+        return secretJson.secretText;
     } catch (err) {
         throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);
     }
@@ -191,7 +190,7 @@ async function setApplicationSecret(applicationJson: any) {
 async function setIdentifierUri(applicationJson: any) {
     try {
         console.log('Setting identifierUri');
-        let azRestCommand = await fs.readFileSync(defaults.setIdentifierUriCommmandPath, 'utf8');
+        let azRestCommand: string = await fs.readFileSync(defaults.setIdentifierUriCommmandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId).replace('{PORT}', process.env.PORT);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
@@ -202,7 +201,7 @@ async function setIdentifierUri(applicationJson: any) {
 async function setSignInAudience(applicationJson: any) {
     try {
         console.log('Setting signin audience');
-        let azRestCommand = await fs.readFileSync(defaults.setSigninAudienceCommandPath, 'utf8');
+        let azRestCommand: string = await fs.readFileSync(defaults.setSigninAudienceCommandPath, 'utf8');
         azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id);
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
@@ -215,7 +214,7 @@ async function updateProjectManifest(manifestPath: string, applicationId: string
     try {
         // Update manifest with application guid and unique manifest id
         const manifestContent: string = await fs.readFileSync(manifestPath, 'utf8');
-        const re = new RegExp('{application GUID here}', 'g');
+        const re: RegExp = new RegExp('{application GUID here}', 'g');
         const updatedManifestContent: string = manifestContent.replace(re, applicationId);
         await fs.writeFileSync(manifestPath, updatedManifestContent);
         await manifest.modifyManifestFile(manifestPath, 'random');

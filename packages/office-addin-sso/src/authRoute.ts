@@ -30,9 +30,9 @@ export class AuthRouter {
                     scope: ['User.Read'].join(' ')
                 };
 
-                const stsDomain = 'https://login.microsoftonline.com';
-                const tenant = 'common';
-                const tokenURLSegment = 'oauth2/v2.0/token';
+                const stsDomain: string = 'https://login.microsoftonline.com';
+                const tenant: string = 'common';
+                const tokenURLSegment: string = 'oauth2/v2.0/token';
 
                 try {
                     const tokenResponse = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {

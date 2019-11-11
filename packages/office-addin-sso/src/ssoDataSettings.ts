@@ -44,7 +44,7 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
     }
 }
 
-export function writeApplicationData(applicationId) {
+export function writeApplicationData(applicationId: string) {
     let isTypecript: boolean = false;
     try {
         // Update .ENV file

@@ -33,13 +33,13 @@ export class SSOService {
         });
     }
 
-    private async getSecret() {
+    private async getSecret(): Promise<void> {
         const manifestInfo = await manifest.readManifestFile(this.manifestPath);
         const appSecret = getSecretFromCredentialStore(manifestInfo.displayName);
         process.env.secret = appSecret;
     }
 
-    private async startServer(app, port) {
+    private async startServer(app, port): Promise<void> {
         const options = await devCerts.getHttpsServerOptions();
         https.createServer(options, app).listen(port, () => console.log(`Server running on ${port}`));
     }

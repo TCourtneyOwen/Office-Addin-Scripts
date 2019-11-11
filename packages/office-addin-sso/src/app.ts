@@ -69,11 +69,6 @@ export class App {
         this.appInstance.get('/getuserdata', async function (req, res, next) {
             const graphToken = req.get('access_token');
 
-            // Minimize the data that must come from MS Graph by specifying only the property we need ("name")
-            // and only the top 10 folder or file names.
-            // Note that the last parameter, for queryParamsSegment, is hardcoded. If you reuse this code in
-            // a production add-in and any part of queryParamsSegment comes from user input, be sure that it is
-            // sanitized so that it cannot be used in a Response header injection attack. 
             const graphData = await MSGraphHelper.getGraphData(graphToken, "/me", "");
 
             // If Microsoft Graph returns an error, such as invalid or expired token,
@@ -83,8 +78,7 @@ export class App {
                 next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
             }
             else {
-                // MS Graph data includes OData metadata and eTags that we don't need.
-                // Send only what is actually needed to the client: the item names.
+                // Add user profile info and return the the client
                 const userProfileInfo = [];
                 userProfileInfo.push(graphData["displayName"]);
                 userProfileInfo.push(graphData["jobTitle"]);
