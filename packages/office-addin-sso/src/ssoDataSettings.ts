@@ -12,8 +12,8 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string): 
                 execSync(addSecretToWindowsStoreCommand, { stdio: "pipe" });
                 break;
             case "darwin":
-                console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain`);
-                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret}`;
+                console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain. You will need to provide an admin password to update the Keychain`);
+                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret} -U`;
                 execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
                 break;
             default:
