@@ -15,8 +15,8 @@ const secret: string = '9lcUGBHc8F0s/8FINhwLmTUuhn@KBp=_';
 describe("Unit Tests", function () {
     describe("addSecretToCredentialStore()/getSecretFromCredentialStore()", function () {
         it("Add secret and retrive secret from credential store", function () {
-            ssoData.addSecretToCredentialStore(ssoAppName, secret);
-            const retrievedSecret: string = ssoData.getSecretFromCredentialStore(ssoAppName).trim();
+            ssoData.addSecretToCredentialStore(ssoAppName, secret, true /* isTest */);
+            const retrievedSecret: string = ssoData.getSecretFromCredentialStore(ssoAppName, true /* isTest */).trim();
             assert.strictEqual(secret, retrievedSecret);
         });        
     });
@@ -54,7 +54,7 @@ describe("Unit Tests", function () {
         const sso = new server.SSOService(`${__dirname}/test-manifest.xml`);
         it("Start SSO Service and ping server to verify it's started", async function () {
             // Start SSO service
-            const serverStarted = await sso.startSsoService(true /* mochaTest */);
+            const serverStarted = await sso.startSsoService(true /* isTest */);
             assert.equal(serverStarted, true);
             const serverState = sso.getTestServerState();
             assert.equal(serverState, true);

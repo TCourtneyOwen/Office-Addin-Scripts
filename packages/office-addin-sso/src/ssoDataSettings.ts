@@ -1,3 +1,8 @@
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license in the root of the repo.
+/*
+    This file provides the writing and retrieval of application data
+*/
+
 import * as defaults from './defaults';
 import { execSync } from "child_process";
 import * as fs from 'fs';

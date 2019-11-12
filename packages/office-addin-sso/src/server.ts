@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license in the root of the repo.
-
 /*
-    This file provides the provides server startup, authorization context creation, and the Web APIs of the add-in.
+    This file provides server configuration, startup and stop
 */
 import * as https from 'https';
 import * as devCerts from 'office-addin-dev-certs';

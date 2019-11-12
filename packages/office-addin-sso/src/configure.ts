@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license in root of repo. -->
+ *
+ * This file defines Azure application registration.
+ */
+
 import * as childProcess from 'child_process';
 import * as defaults from './defaults';
 import * as fs from 'fs';
