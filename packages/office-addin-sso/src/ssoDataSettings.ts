@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { modifyManifestFile } from 'office-addin-manifest';
 
-export function addSecretToCredentialStore(ssoAppName: string, secret: string): void {
+export function addSecretToCredentialStore(ssoAppName: string, secret: string, isTest: boolean = false): void {
     try {
         switch (process.platform) {
             case "win32":
@@ -14,7 +14,7 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string): 
                 break;
             case "darwin":
                 console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain. You will need to provide an admin password to update the Keychain`);
-                const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret} -U`;
+                const addSecretToMacStoreCommand = `${isTest ? "" : "sudo"} security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret} -U`;
                 execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
                 break;
             default:
@@ -25,7 +25,7 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string): 
     }
 }
 
-export function getSecretFromCredentialStore(ssoAppName: string): string {
+export function getSecretFromCredentialStore(ssoAppName: string, isTest: boolean = false): string {
     try {
         switch (process.platform) {
             case "win32":
@@ -34,7 +34,7 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
                 return execSync(getSecretFromWindowsStoreCommand, { stdio: "pipe" }).toString();
             case "darwin":
                 console.log(`Getting application secret for ${ssoAppName} from Mac OS Keychain`);
-                const getSecretFromMacStoreCommand = `sudo security find-generic-password -a ${os.userInfo().username} -s ${ssoAppName} -w`;
+                const getSecretFromMacStoreCommand = `${isTest ? "" : "sudo"} security find-generic-password -a ${os.userInfo().username} -s ${ssoAppName} -w`;
                 return execSync(getSecretFromMacStoreCommand, { stdio: "pipe" }).toString();;
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);

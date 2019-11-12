@@ -24,13 +24,13 @@ export class SSOService {
         this.ssoServiceStarted = false;
     }
 
-    public async startSsoService(mochaTest: boolean = false): Promise<boolean> {
+    public async startSsoService(isTest: boolean = false): Promise<boolean> {
         return new Promise<boolean>(async (resolve, reject) => {
             try {
-                if (mochaTest) {
+                if (isTest) {
                     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
                 }
-                await this.getSecret();
+                await this.getSecret(isTest);
                 await this.startServer(this.app.appInstance, this.port);
                 this.ssoServiceStarted = true;
                 resolve(true);
@@ -40,9 +40,9 @@ export class SSOService {
         });
     }
 
-    private async getSecret(): Promise<void> {
+    private async getSecret(isTest: boolean = false): Promise<void> {
         const manifestInfo = await manifest.readManifestFile(this.manifestPath);
-        const appSecret = getSecretFromCredentialStore(manifestInfo.displayName);
+        const appSecret = getSecretFromCredentialStore(manifestInfo.displayName, true /* isTest */);
         process.env.secret = appSecret;
     }
 
