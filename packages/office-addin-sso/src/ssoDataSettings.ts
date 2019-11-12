@@ -2,6 +2,7 @@ import * as defaults from './defaults';
 import { execSync } from "child_process";
 import * as fs from 'fs';
 import * as os from 'os';
+import { modifyManifestFile } from 'office-addin-manifest';
 
 export function addSecretToCredentialStore(ssoAppName: string, secret: string): void {
     try {
@@ -44,38 +45,63 @@ export function getSecretFromCredentialStore(ssoAppName: string): string {
     }
 }
 
-export function writeApplicationData(applicationId: string) {
-    let isTypecript: boolean = false;
+function updateEnvFile(applicationId: string, envFilePath: string = defaults.envDataFilePath,): void {
     try {
         // Update .ENV file
-        if (fs.existsSync(defaults.ssoDataFilePath)) {
-            const appData = fs.readFileSync(defaults.ssoDataFilePath, 'utf8');
+        if (fs.existsSync(envFilePath)) {
+            const appData = fs.readFileSync(envFilePath, 'utf8');
             const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
-            fs.writeFileSync(defaults.ssoDataFilePath, updatedAppData);
+            fs.writeFileSync(envFilePath, updatedAppData);
         } else {
-            throw new Error(`${defaults.ssoDataFilePath} does not exist`)
+            throw new Error(`${envFilePath} does not exist`)
         }
     } catch (err) {
-        throw new Error(`Unable to write SSO application data to ${defaults.ssoDataFilePath}. \n${err}`);
+        throw new Error(`Unable to write SSO application data to ${envFilePath}. \n${err}`);
     }
+}
 
+function updateFallBackAuthDialogFile(applicationId: string, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath): void {
+    let isTypecript: boolean = false;
     try {
         // Update fallbackAuthDialog.js
-
-        if (fs.existsSync(defaults.fallbackAuthDialogTypescriptFilePath)) {
+        if (fs.existsSync(fallbackAuthDialogPath)) {
             isTypecript = true;
-            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogTypescriptFilePath, 'utf8');
+            const srcFile = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
             const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(defaults.fallbackAuthDialogTypescriptFilePath, updatedSrcFile);
-        } else if (fs.existsSync(defaults.fallbackAuthDialogJavascriptFilePath)) {
-            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogJavascriptFilePath, 'utf8');
+            fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
+        } else if (fs.existsSync(fallbackAuthDialogPath)) {
+            const srcFile = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
             const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(defaults.fallbackAuthDialogJavascriptFilePath, updatedSrcFile);
+            fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
         }
-         else {
+        else {
             throw new Error(`${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath} does not exist`)
         }
     } catch (err) {
         throw new Error(`Unable to write SSO application data to ${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath}. \n${err}`);
     }
+}
+
+async function updateProjectManifest(applicationId: string, manifestPath: string = defaults.manifestFilePath): Promise<void> {
+    console.log('Updating manifest with application ID');
+    try {
+        if (fs.existsSync(manifestPath)) {
+            // Update manifest with application guid and unique manifest id
+            const manifestContent: string = await fs.readFileSync(manifestPath, 'utf8');
+            const re: RegExp = new RegExp('{application GUID here}', 'g');
+            const updatedManifestContent: string = manifestContent.replace(re, applicationId);
+            await fs.writeFileSync(manifestPath, updatedManifestContent);
+            await modifyManifestFile(manifestPath, 'random');
+        } else {
+            throw new Error(`${manifestPath} does not exist`)
+        }
+    } catch (err) {
+        throw new Error(`Unable to update ${manifestPath}. \n${err}`);
+    }
+}
+
+export async function writeApplicationData(applicationId: string, manifestPath: string = defaults.manifestFilePath, envFilePath: string = defaults.envDataFilePath, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath) {
+    updateEnvFile(applicationId, envFilePath);
+    updateFallBackAuthDialogFile(applicationId, fallbackAuthDialogPath);
+    await updateProjectManifest(applicationId, manifestPath)
 }

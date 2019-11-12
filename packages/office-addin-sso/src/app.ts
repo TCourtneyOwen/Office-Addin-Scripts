@@ -58,15 +58,20 @@ export class App {
         this.appInstance.use('/', indexRouter.router);
         this.appInstance.use('/auth', authRouter.router);
 
-        this.appInstance.get('/taskpane.html', (async (req, res) => {
+        // listen for 'ping'
+        this.appInstance.get("/ping", function (req: any, res: any, next: any) {
+            res.send(process.platform);
+        });
+
+        this.appInstance.get('/taskpane.html', (async (req: any, res: any) => {
             return res.sendfile('taskpane.html');
         }));
 
-        this.appInstance.get('/fallbackauthdialog.html', (async (req, res) => {
+        this.appInstance.get('/fallbackauthdialog.html', (async (req: any, res: any) => {
             return res.sendfile('fallbackauthdialog.html');
         }));
 
-        this.appInstance.get('/getuserdata', async function (req, res, next) {
+        this.appInstance.get('/getuserdata', async function (req: any, res: any, next: any) {
             const graphToken = req.get('access_token');
 
             const graphData = await MSGraphHelper.getGraphData(graphToken, "/me", "");
@@ -92,12 +97,12 @@ export class App {
 
 
         // Catch 404 and forward to error handler
-        this.appInstance.use(function (req, res, next) {
+        this.appInstance.use(function (req: any, res: any, next: any) {
             next(createError(404));
         });
 
         // error handler
-        this.appInstance.use(function (err, req, res, next) {
+        this.appInstance.use(function (err: any, req: any, res: any, next: any) {
             // set locals, only providing error in development
             res.locals.message = err.message;
             res.locals.error = req.app.get('env') === 'development' ? err : {};

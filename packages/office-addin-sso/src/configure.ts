@@ -1,9 +1,8 @@
 import * as childProcess from 'child_process';
 import * as defaults from './defaults';
 import * as fs from 'fs';
-import * as manifest from 'office-addin-manifest';
 import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSettings';
-import { ManifestInfo } from 'office-addin-manifest';
+import { ManifestInfo, readManifestFile } from 'office-addin-manifest';
 require('dotenv').config();
 
 export async function configureSSOApplication(manifestPath: string) {
@@ -21,14 +20,13 @@ export async function configureSSOApplication(manifestPath: string) {
     const userJson: Object = await logIntoAzure();
     if (userJson) {
         console.log('Login was successful!');
-        const manifestInfo: ManifestInfo = await manifest.readManifestFile(manifestPath);
+        const manifestInfo: ManifestInfo = await readManifestFile(manifestPath);
 
         // Register application
         const applicationJson: any = await createNewApplication(manifestInfo.displayName);
 
         // Write application data to manifest and .ENV file
-        writeApplicationData(applicationJson.appId);
-        updateProjectManifest(manifestPath, applicationJson.appId);
+        writeApplicationData(applicationJson.appId, manifestPath);
 
         // Log out of Azure
         await logoutAzure();
@@ -44,7 +42,7 @@ export async function configureSSOApplication(manifestPath: string) {
 async function createNewApplication(ssoAppName: string): Promise<Object> {
     try {
         console.log('Registering new application in Azure');
-        let azRestCommand = await fs.readFileSync(defaults.azRestpCreateCommandPath, 'utf8');
+        let azRestCommand = await fs.readFileSync(defaults.azRestApppCreateCommandPath, 'utf8');
         const reName = new RegExp('{SSO-AppName}', 'g');
         const rePort = new RegExp('{PORT}', 'g');
         azRestCommand = azRestCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
@@ -206,20 +204,5 @@ async function setSignInAudience(applicationJson: any) {
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
         throw new Error(`Unable to set signInAudience for ${applicationJson.displayName}. \n${err}`);
-    }
-}
-
-async function updateProjectManifest(manifestPath: string, applicationId: string) {
-    console.log('Updating manifest with application ID');
-    try {
-        // Update manifest with application guid and unique manifest id
-        const manifestContent: string = await fs.readFileSync(manifestPath, 'utf8');
-        const re: RegExp = new RegExp('{application GUID here}', 'g');
-        const updatedManifestContent: string = manifestContent.replace(re, applicationId);
-        await fs.writeFileSync(manifestPath, updatedManifestContent);
-        await manifest.modifyManifestFile(manifestPath, 'random');
-
-    } catch (err) {
-        throw new Error(`Unable to update ${manifestPath}. \n${err}`);
     }
 }

@@ -13,19 +13,26 @@ import { getSecretFromCredentialStore } from './ssoDataSettings'
 export class SSOService {
     private app: App;
     manifestPath: string;
-    private port: number | string
+    private port: number | string;
+    private server: https.Server;
+    private ssoServiceStarted: boolean;
     constructor(manifestPath: string) {
         this.port = process.env.PORT || '3000';
         this.app = new App(this.port);
         this.app.initialize();
         this.manifestPath = manifestPath;
+        this.ssoServiceStarted = false;
     }
 
-    public async startSsoService(): Promise<boolean> {
+    public async startSsoService(mochaTest: boolean = false): Promise<boolean> {
         return new Promise<boolean>(async (resolve, reject) => {
             try {
-                this.getSecret();
-                this.startServer(this.app.appInstance, this.port);
+                if (mochaTest) {
+                    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+                }
+                await this.getSecret();
+                await this.startServer(this.app.appInstance, this.port);
+                this.ssoServiceStarted = true;
                 resolve(true);
             } catch {
                 reject(false);
@@ -39,8 +46,36 @@ export class SSOService {
         process.env.secret = appSecret;
     }
 
-    private async startServer(app, port): Promise<void> {
-        const options = await devCerts.getHttpsServerOptions();
-        https.createServer(options, app).listen(port, () => console.log(`Server running on ${port}`));
+    public getTestServerState(): boolean {
+        return this.ssoServiceStarted;
+    }
+
+    public async startServer(app, port): Promise<boolean> {
+        return new Promise<boolean>(async (resolve, reject) => {
+            try {
+                const options = await devCerts.getHttpsServerOptions();
+                this.server = https.createServer(options, app).listen(port, () => console.log(`Server running on ${port}`));
+                resolve(true);
+            } catch (err) {
+                reject(`Unable to start test server on port ${port}.\n${err}`)
+            }
+        });
+    }
+
+    public async stopServer(): Promise<boolean> {
+        return new Promise<boolean>(async (resolve, reject) => {
+            if (this.ssoServiceStarted) {
+                try {
+                    this.server.close();
+                    this.ssoServiceStarted = false;
+                    resolve(true);
+                } catch (err) {
+                    reject(new Error(`Unable to stop test server.\n${err}`));
+                }
+            } else {
+                // test server not started
+                resolve(false);
+            }
+        });
     }
 }

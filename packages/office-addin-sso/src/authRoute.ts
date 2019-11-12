@@ -13,7 +13,7 @@ export class AuthRouter {
     constructor() {
         this.router = express.Router();
 
-        this.router.get('/', async function (req, res, next) {
+        this.router.get('/', async function (req: any, res: any, next: any) {
             const authorization = req.get('Authorization');
             if (authorization == null) {
                 let error = new Error('No Authorization header was found.');
