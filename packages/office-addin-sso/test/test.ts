@@ -34,7 +34,7 @@ describe("Unit Tests", function () {
 
             // Read from updated env copy and ensure it contains the appId
             const envFile = fs.readFileSync(copyEnvFile, 'utf8');
-            assert.equal(envFile.includes(appId), true);         
+            assert.equal(envFile.includes(appId), true);
 
             // Read from updated manifest copy and ensure it contains the appId
             const manifestFile = fs.readFileSync(copyEnvFile, 'utf8');

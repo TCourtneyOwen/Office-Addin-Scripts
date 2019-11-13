@@ -13,7 +13,6 @@ import * as path from 'path';
 import * as cookieParser from 'cookie-parser';
 import * as logger from 'morgan';
 import { AuthRouter } from './authRoute';
-import * as indexRouter from './indexRoute';
 import { MSGraphHelper } from './msgraph-helper';
 
 export class App {
@@ -54,8 +53,13 @@ export class App {
         }
 
         const authRouter = new AuthRouter();
+        
+        const indexRouter = express.Router();
+        indexRouter.get('/', function (req, res, next) {
+            res.render('/taskpane.html');
+        });
 
-        this.appInstance.use('/', indexRouter.router);
+        this.appInstance.use('/', indexRouter);
         this.appInstance.use('/auth', authRouter.router);
 
         // listen for 'ping'
