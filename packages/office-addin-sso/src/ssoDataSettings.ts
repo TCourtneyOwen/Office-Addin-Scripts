@@ -74,10 +74,10 @@ function updateFallBackAuthDialogFile(applicationId: string, fallbackAuthDialogP
             const srcFile = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
             const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
             fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
-        } else if (fs.existsSync(fallbackAuthDialogPath)) {
-            const srcFile = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
+        } else if (fs.existsSync(defaults.fallbackAuthDialogJavascriptFilePath)) {
+            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogJavascriptFilePath, 'utf8');
             const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
+            fs.writeFileSync(defaults.fallbackAuthDialogJavascriptFilePath, updatedSrcFile);
         }
         else {
             throw new Error(`${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath} does not exist`)
