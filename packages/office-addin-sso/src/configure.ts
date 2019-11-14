@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSettings';
 import { ManifestInfo, readManifestFile } from 'office-addin-manifest';
 require('dotenv').config();
+let allowGrantAdminConsent: boolean = true;
 
 export async function configureSSOApplication(manifestPath: string) {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
@@ -24,7 +25,7 @@ export async function configureSSOApplication(manifestPath: string) {
     }
 
     const userJson: Object = await logIntoAzure();
-    if (userJson) {
+    if (Object.keys(userJson).length >= 1) {
         console.log('Login was successful!');
         const manifestInfo: ManifestInfo = await readManifestFile(manifestPath);
 
@@ -64,7 +65,9 @@ async function createNewApplication(ssoAppName: string): Promise<Object> {
             await setSignInAudience(applicationJson);
 
             // Grant admin consent for application
-            await grantAdminContent(applicationJson);
+            if (allowGrantAdminConsent){
+                await grantAdminContent(applicationJson);
+            }
 
             // Create an application secret and add to the credential store
             const secret: string = await setApplicationSecret(applicationJson);
@@ -150,7 +153,14 @@ export async function installAzureCli() {
 
 export async function logIntoAzure(): Promise<Object> {
     console.log('Opening browser for authentication to Azure. Enter valid Azure credentials');
-    return await promiseExecuteCommand('az login --allow-no-subscriptions');
+    let userJson: Object = await promiseExecuteCommand('az login --allow-no-subscriptions');
+    if (Object.keys(userJson).length < 1) {
+        // Try alternate login
+        logoutAzure();
+        userJson = await promiseExecuteCommand('az login');
+        allowGrantAdminConsent = false;
+    }
+    return userJson
 }
 
 async function logoutAzure(): Promise<Object> {
