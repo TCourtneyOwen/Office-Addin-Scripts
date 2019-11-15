@@ -101,7 +101,7 @@ async function grantAdminContent(applicationJson: any) {
         // Check to see if the application is available before granting admin consent
         let appReady: boolean = false;
         let counter: number = 0;
-        while (appReady === false && counter <= 20) {
+        while (appReady === false && counter <= 40) {
             appReady = await applicationReady(applicationJson);
             counter++;
         }
