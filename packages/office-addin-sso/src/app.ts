@@ -77,8 +77,10 @@ export class App {
 
         this.appInstance.get('/getuserdata', async function (req: any, res: any, next: any) {
             const graphToken = req.get('access_token');
+            const graphUrlSegment = process.env.GRAPH_URL_SEGMENT || '/me'
+            const graphQueryParamSegment = process.env.QUERY_PARAM_SEGMENT || "";
 
-            const graphData = await MSGraphHelper.getGraphData(graphToken, "/me", "");
+            const graphData = await MSGraphHelper.getGraphData(graphToken, graphUrlSegment, graphQueryParamSegment);
 
             // If Microsoft Graph returns an error, such as invalid or expired token,
             // there will be a code property in the returned object set to a HTTP status (e.g. 401).
@@ -87,15 +89,7 @@ export class App {
                 next(createError(graphData.code, "Microsoft Graph error " + JSON.stringify(graphData)));
             }
             else {
-                // Add user profile info and return the the client
-                const userProfileInfo = [];
-                userProfileInfo.push(graphData["displayName"]);
-                userProfileInfo.push(graphData["jobTitle"]);
-                userProfileInfo.push(graphData["mail"]);
-                userProfileInfo.push(graphData["mobilePhone"]);
-                userProfileInfo.push(graphData["officeLocation"]);
-
-                res.send(userProfileInfo);
+                res.send(graphData);
             }
         });
 

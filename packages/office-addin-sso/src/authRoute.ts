@@ -15,6 +15,7 @@ export class AuthRouter {
 
         this.router.get('/', async function (req: any, res: any, next: any) {
             const authorization = req.get('Authorization');
+            const scopeName: string = process.env.SCOPE || 'User.Read'
             if (authorization == null) {
                 let error = new Error('No Authorization header was found.');
                 next(error);
@@ -27,7 +28,7 @@ export class AuthRouter {
                     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                     assertion: jwt,
                     requested_token_use: 'on_behalf_of',
-                    scope: ['User.Read'].join(' ')
+                    scope: [scopeName].join(' ')
                 };
 
                 const stsDomain: string = 'https://login.microsoftonline.com';
