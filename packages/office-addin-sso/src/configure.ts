@@ -135,7 +135,7 @@ export async function azureCliInstalled(): Promise<boolean> {
 
 async function installAzureCli() {
     try {
-        console.log("Downloading and installing Azure CLI - this could take a minute or so");
+        console.log("Downloading and installing Azure CLI - this could take a few minutes");
         switch (process.platform) {
             case "win32":
                 const windowsCliInstallCommand = `powershell -ExecutionPolicy Bypass -File "${defaults.azCliInstallCommandPath}"`;
