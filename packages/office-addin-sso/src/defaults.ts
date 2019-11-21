@@ -9,7 +9,6 @@ export const azRestAddSecretCommandPath = path.resolve(`${__dirname}/scripts/azA
 export const azRestAppCreateCommandPath: string = path.resolve(`${__dirname}/scripts/azRestAppCreateCmd.txt`);
 export const azRestGetOrganizationDetailsCommandPath: string = path.resolve(`${__dirname}/scripts/azGetOrganizationDetails.txt`);
 export const azRestGetTenantAdminMembershipCommandPath: string = path.resolve(`${__dirname}/scripts/azRestGetTenantAdminMembership.txt`);
-export const azRestGetServicePrincipalsCommandPath: string = path.resolve(`${__dirname}/scripts/azGetServicePrincipals.txt`);
 export const azRestGetTenantRolesPath: string = path.resolve(`${__dirname}/scripts/azRestGetTenantRoles.txt`);
 export const azRestSetIdentifierUriCommmandPath: string = path.resolve(`${__dirname}/scripts/azRestSetIdentifierUri.txt`);
 export const azRestSetSigninAudienceCommandPath: string = path.resolve(`${__dirname}/scripts/azSetSignInAudienceCmd.txt`);

@@ -154,7 +154,7 @@ async function installAzureCli() {
 }
 
 async function isUserTenantAdmin(userInfo: Object): Promise<boolean> {
-    console.log("Check if logged in user is a tenant admin");
+    console.log("Checking if logged-in user is a tenant admin");
     let azRestCommand: string = fs.readFileSync(defaults.azRestGetTenantRolesPath, 'utf8');
     const tenantRoles: any = await promiseExecuteCommand(azRestCommand);
     let tenantAdminId: string = '';
@@ -195,7 +195,7 @@ async function logoutAzure(): Promise<Object> {
 async function promiseExecuteCommand(cmd: string, returnJson: boolean = true, expectError: boolean = false): Promise<Object | string> {
     return new Promise((resolve, reject) => {
         try {
-            childProcess.exec(cmd, { maxBuffer: 1024 * 500 }, async (err, stdout, stderr) => {
+            childProcess.exec(cmd, { maxBuffer: 1024 * 102400 }, async (err, stdout, stderr) => {
                 if (err && !expectError) {
                     console.log(stderr);
                     reject(stderr);
@@ -262,27 +262,27 @@ async function setTenantReplyUrls(applicationJson: any) {
         const sharePointReplyUrl: string = `https://${tenantName}.sharepoint.com/_forms/singlesignon.aspx`;
 
         // Get service principals for tenant
-        azRestCommand = fs.readFileSync(defaults.azRestGetServicePrincipalsCommandPath, 'utf8');
+        azRestCommand = 'az ad sp list --all';
         const servicePrincipals: any = await promiseExecuteCommand(azRestCommand);
 
-        // Get SharePoint service principal
-        servicePrincipals.value.forEach(item => {
+        // Check if SharePoint redirects are set for SharePoint principal
+        for (let item of servicePrincipals) {
             if (item.appId === sharePointServiceId) {
-                servicePrinicipaObjectlId = item.id;
-                // if there are no reply urls set, then we need to set them for the tenant
+                servicePrinicipaObjectlId = item.objectId;
                 if (item.replyUrls.length === 0) {
-                    return;
-                // if there are reply urls set, then we need to see if the SharePoint SSO reply urls are already set
+                    break;
+                    // if there are reply urls set, then we need to see if the SharePoint SSO reply urls are already set
                 } else {
-                    item.replyUrls.forEach(element => {
-                        if (element === oneDriveReplyUrl || element === sharePointReplyUrl) {
+                    for (let url of item.replyUrls) {
+                        if (url === oneDriveReplyUrl || url === sharePointReplyUrl) {
                             setReplyUrls = false;
-                            return;
-                        }                    
-                    });
+                            break;
+                        }
+                    }
                 }
+
             }
-        });
+        }
 
         if (setReplyUrls) {
             console.log('Setting SharePoint reply urls for tenant');
