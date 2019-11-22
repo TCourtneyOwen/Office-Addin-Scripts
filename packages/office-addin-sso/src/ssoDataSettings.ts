@@ -20,12 +20,12 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string, i
             case "darwin":
                 console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain. You will need to provide an admin password to update the Keychain`);
                 // Check first to see if the secret already exists i the keychain. If it does, delete it and recreate it
-                const existingSecret = getSecretFromCredentialStore(ssoAppName);
+                const existingSecret = getSecretFromCredentialStore(ssoAppName, isTest);
                 if (existingSecret !== '') {
-                    const updatSecretInMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -U -s "${ssoAppName}" -w "${secret}"`;
+                    const updatSecretInMacStoreCommand = `${isTest ? '' : 'sudo'} security add-generic-password -a ${os.userInfo().username} -U -s "${ssoAppName}" -w "${secret}"`;
                     execSync(updatSecretInMacStoreCommand, { stdio: "pipe" });
                 } else {
-                    const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w "${secret}"`;
+                    const addSecretToMacStoreCommand = `${isTest ? '' : 'sudo'} security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w "${secret}"`;
                     execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
                 }
                 break;
