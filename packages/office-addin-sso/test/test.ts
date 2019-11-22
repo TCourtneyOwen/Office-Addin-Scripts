@@ -7,7 +7,7 @@ import * as mocha from "mocha";
 import * as path from 'path';
 import * as server from './../src/server';
 import * as ssoData from './../src/ssoDataSettings';
-import * as testHelper from "../../office-addin-test-helpers";
+import * as testHelper from "office-addin-test-helpers";
 const appId: string = '584c9885-baa7-44ef-95b6-6df1064a2e25';
 const ssoAppName: string = 'Office-Addin-Taskpane-SSO-Test';
 const secret: string = '9lcUGBHc8F0s/8FINhwLmTUuhn@KBp=_';

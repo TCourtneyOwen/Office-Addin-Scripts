@@ -42,6 +42,9 @@ export class SSOService {
     private async getSecret(isTest: boolean = false): Promise<void> {
         const manifestInfo = await manifest.readManifestFile(this.manifestPath);
         const appSecret = getSecretFromCredentialStore(manifestInfo.displayName, true /* isTest */);
+        if (appSecret === '') {
+            throw new Error('Call to getSecretFromCredentialStore returned empty string');
+        }
         process.env.secret = appSecret;
     }
 

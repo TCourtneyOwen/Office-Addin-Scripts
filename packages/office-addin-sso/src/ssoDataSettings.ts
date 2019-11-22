@@ -19,8 +19,15 @@ export function addSecretToCredentialStore(ssoAppName: string, secret: string, i
                 break;
             case "darwin":
                 console.log(`Adding application secret for ${ssoAppName} to Mac OS Keychain. You will need to provide an admin password to update the Keychain`);
-                const addSecretToMacStoreCommand = `${isTest ? "" : "sudo"} security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w ${secret} -U`;
-                execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
+                // Check first to see if the secret already exists i the keychain. If it does, delete it and recreate it
+                const existingSecret = getSecretFromCredentialStore(ssoAppName);
+                if (existingSecret !== '') {
+                    const updatSecretInMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -U -s "${ssoAppName}" -w "${secret}"`;
+                    execSync(updatSecretInMacStoreCommand, { stdio: "pipe" });
+                } else {
+                    const addSecretToMacStoreCommand = `sudo security add-generic-password -a ${os.userInfo().username} -s "${ssoAppName}" -w "${secret}"`;
+                    execSync(addSecretToMacStoreCommand, { stdio: "pipe" });
+                }
                 break;
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);
@@ -46,7 +53,7 @@ export function getSecretFromCredentialStore(ssoAppName: string, isTest: boolean
         }
 
     } catch (err) {
-        throw new Error(`Unable to retrieve secret for ${ssoAppName} to Windows Credential Store. \n${err}`);
+        return '';
     }
 }
 
