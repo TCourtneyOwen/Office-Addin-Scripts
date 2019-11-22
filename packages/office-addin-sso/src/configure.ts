@@ -13,7 +13,7 @@ require('dotenv').config();
 
 export async function configureSSOApplication(manifestPath: string) {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
-    const cliInstalled = await azureCliInstalled();
+    const cliInstalled = await isAzureCliInstalled();
     if(!cliInstalled) {
         console.log(chalk.yellow("Azure CLI is not installed.  Installing now before proceeding"));
         await installAzureCli();
@@ -114,7 +114,7 @@ async function grantAdminContent(applicationJson: any) {
     }
 }
 
-export async function azureCliInstalled(): Promise<boolean> {
+export async function isAzureCliInstalled(): Promise<boolean> {
     try {
         switch (process.platform) {
             case "win32":
@@ -124,7 +124,7 @@ export async function azureCliInstalled(): Promise<boolean> {
             case "darwin":
                 const appsInstalledMacCommand = 'brew list';
                 const appsMac: Object | string = await promiseExecuteCommand(appsInstalledMacCommand, false /* returnJson */);
-                return appsMac.hasOwnProperty('azure-cli');
+                return appsMac.toString().includes('azure-cli');
             default:
                 throw new Error(`Platform not supported: ${process.platform}`);
         }
