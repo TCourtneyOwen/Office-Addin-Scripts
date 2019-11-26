@@ -103,7 +103,7 @@ function updateFallBackAuthDialogFile(applicationId: string, port: string, fallb
 
         // Update fallbackauthdialog file
         const updatedSrcFile = srcFileContent.replace('{application GUID here}', applicationId).replace('{PORT}', port);
-        fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
+        fs.writeFileSync(isTypecript? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath, updatedSrcFile);
     } catch (err) {
         throw new Error(`Unable to write SSO application data to ${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath}. \n${err}`);
     }
