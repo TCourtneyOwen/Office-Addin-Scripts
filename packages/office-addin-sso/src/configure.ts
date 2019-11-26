@@ -11,7 +11,7 @@ import { addSecretToCredentialStore, writeApplicationData } from './ssoDataSetti
 import { ManifestInfo, readManifestFile } from 'office-addin-manifest';
 require('dotenv').config();
 
-export async function configureSSOApplication(manifestPath: string) {
+export async function configureSSOApplication(manifestPath: string, port: string) {
     // Check to see if Azure CLI is installed.  If it isn't installed then install it
     const cliInstalled = await isAzureCliInstalled();
     if(!cliInstalled) {
@@ -29,36 +29,36 @@ export async function configureSSOApplication(manifestPath: string) {
         const manifestInfo: ManifestInfo = await readManifestFile(manifestPath);
 
         // Register application
-        const applicationJson: any = await createNewApplication(manifestInfo.displayName, userJson);
+        const applicationJson: any = await createNewApplication(manifestInfo.displayName, port, userJson);
 
-        // Write application data to manifest and .ENV file
-        writeApplicationData(applicationJson.appId, manifestPath);
+        // Write application data to project files (manifest.xml, .env, src/taskpane/fallbacktaskpane.ts)
+        await writeApplicationData(applicationJson.appId, port, manifestPath);
 
         // Log out of Azure
         await logoutAzure();
 
         // Output application definition to console
-        console.log(applicationJson);
+        console.log(chalk.green(`Application with id ${applicationJson.appId} successfully registered in Azure.  Go to https://ms.portal.azure.com/#home and search for 'App Registrations' to see your application`));
     }
     else {
         throw new Error(`Login to Azure did not succeed.`);
     }
 }
 
-async function createNewApplication(ssoAppName: string, userJson: Object): Promise<Object> {
+async function createNewApplication(ssoAppName: string, port: string, userJson: Object): Promise<Object> {
     try {
         console.log('Registering new application in Azure');
         let azRestCommand = await fs.readFileSync(defaults.azRestAppCreateCommandPath, 'utf8');
         const reName = new RegExp('{SSO-AppName}', 'g');
         const rePort = new RegExp('{PORT}', 'g');
-        azRestCommand = azRestCommand.replace(reName, ssoAppName).replace(rePort, process.env.PORT);
+        azRestCommand = azRestCommand.replace(reName, ssoAppName).replace(rePort, port);
 
         const applicationJson: Object = await promiseExecuteCommand(azRestCommand, true /* returnJson */);
 
         if (applicationJson) {
             console.log('Application was successfully registered with Azure');
             // Set application IdentifierUri
-            await setIdentifierUri(applicationJson);
+            await setIdentifierUri(applicationJson, port);
 
             // Set application sign-in audience
             await setSignInAudience(applicationJson);
@@ -178,7 +178,7 @@ async function isUserTenantAdmin(userInfo: Object): Promise<boolean> {
 
 async function logIntoAzure(): Promise<Object> {
     console.log('Opening browser for authentication to Azure. Enter valid Azure credentials');
-    let userJson: Object = await promiseExecuteCommand('az login --allow-no-subscriptions');
+    let userJson: Object = await promiseExecuteCommand('az login --allow-no-subscriptions', true /* returnJson */, true /* expectError */);
     if (Object.keys(userJson).length < 1) {
         // Try alternate login
         logoutAzure();
@@ -225,11 +225,11 @@ async function setApplicationSecret(applicationJson: any): Promise<string> {
     }
 }
 
-async function setIdentifierUri(applicationJson: any) {
+async function setIdentifierUri(applicationJson: any, port: string) {
     try {
         console.log('Setting identifierUri');
         let azRestCommand: string = await fs.readFileSync(defaults.azRestSetIdentifierUriCommmandPath, 'utf8');
-        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId).replace('{PORT}', process.env.PORT);
+        azRestCommand = azRestCommand.replace('<App_Object_ID>', applicationJson.id).replace('<App_Id>', applicationJson.appId).replace('{PORT}', port.toString());
         await promiseExecuteCommand(azRestCommand);
     } catch (err) {
         throw new Error(`Unable to set identifierUri for ${applicationJson.displayName}. \n${err}`);

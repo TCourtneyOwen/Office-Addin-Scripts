@@ -2,7 +2,7 @@
 /*
     This file provides the writing and retrieval of application data
 */
-
+import * as chalk from 'chalk';
 import * as defaults from './defaults';
 import { execSync } from "child_process";
 import * as fs from 'fs';
@@ -57,13 +57,21 @@ export function getSecretFromCredentialStore(ssoAppName: string, isTest: boolean
     }
 }
 
-function updateEnvFile(applicationId: string, envFilePath: string = defaults.envDataFilePath,): void {
+function updateEnvFile(applicationId: string, port: string, envFilePath: string = defaults.envDataFilePath,): void {
+    console.log(`Updating ${envFilePath} with application ID and port`);
     try {
         // Update .ENV file
         if (fs.existsSync(envFilePath)) {
-            const appData = fs.readFileSync(envFilePath, 'utf8');
-            const updatedAppData = appData.replace('CLIENT_ID=', `CLIENT_ID=${applicationId}`);
-            fs.writeFileSync(envFilePath, updatedAppData);
+            const appDataContent = fs.readFileSync(envFilePath, 'utf8');
+
+            // Check to see if the fallbackauthdialog file has already been updated and return if it has.
+            if (!appDataContent.includes('{APPLICATION_ID}') || !appDataContent.includes('{PORT}')) {
+                console.log(chalk.yellow(`${envFilePath} has already been updated. You will need to update the APPLICATION_ID and PORT settings manually`));
+                return;
+            }
+
+            const updatedAppDataContent = appDataContent.replace('{APPLICATION_ID}', applicationId).replace('{PORT}', port);
+            fs.writeFileSync(envFilePath, updatedAppDataContent);
         } else {
             throw new Error(`${envFilePath} does not exist`)
         }
@@ -72,36 +80,52 @@ function updateEnvFile(applicationId: string, envFilePath: string = defaults.env
     }
 }
 
-function updateFallBackAuthDialogFile(applicationId: string, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath): void {
+function updateFallBackAuthDialogFile(applicationId: string, port: string, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath): void {
+    console.log(`Updating ${fallbackAuthDialogPath} with application ID`);
     let isTypecript: boolean = false;
     try {
         // Update fallbackAuthDialog.js
+        let srcFileContent = '';
         if (fs.existsSync(fallbackAuthDialogPath)) {
+            srcFileContent = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
             isTypecript = true;
-            const srcFile = fs.readFileSync(fallbackAuthDialogPath, 'utf8');
-            const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
         } else if (fs.existsSync(defaults.fallbackAuthDialogJavascriptFilePath)) {
-            const srcFile = fs.readFileSync(defaults.fallbackAuthDialogJavascriptFilePath, 'utf8');
-            const updatedSrcFile = srcFile.replace('{application GUID here}', applicationId);
-            fs.writeFileSync(defaults.fallbackAuthDialogJavascriptFilePath, updatedSrcFile);
-        }
-        else {
+            srcFileContent = fs.readFileSync(defaults.fallbackAuthDialogJavascriptFilePath, 'utf8');
+        } else {
             throw new Error(`${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath} does not exist`)
         }
+
+        // Check to see if the fallbackauthdialog file has already been updated and return if it has.
+        if (!srcFileContent.includes('{PORT}')) {
+            console.log(chalk.yellow(`${fallbackAuthDialogPath} has already been updated. You will need to update the 'clientId' and 'redirectUrl' port settings manually`));
+            return;
+        }
+
+        // Update fallbackauthdialog file
+        const updatedSrcFile = srcFileContent.replace('{application GUID here}', applicationId).replace('{PORT}', port);
+        fs.writeFileSync(fallbackAuthDialogPath, updatedSrcFile);
     } catch (err) {
         throw new Error(`Unable to write SSO application data to ${isTypecript ? defaults.fallbackAuthDialogTypescriptFilePath : defaults.fallbackAuthDialogJavascriptFilePath}. \n${err}`);
     }
 }
 
-async function updateProjectManifest(applicationId: string, manifestPath: string = defaults.manifestFilePath): Promise<void> {
-    console.log('Updating manifest with application ID');
+async function updateProjectManifest(applicationId: string, port: string, manifestPath: string = defaults.manifestFilePath): Promise<void> {
+    console.log(`Updating ${manifestPath} with applicationId and port`);
     try {
         if (fs.existsSync(manifestPath)) {
             // Update manifest with application guid and unique manifest id
             const manifestContent: string = await fs.readFileSync(manifestPath, 'utf8');
+
+            // Check to see if the manifest has already been updated and return if it has
+            if (!manifestContent.includes('{PORT}')) {
+                console.log(chalk.yellow(`${manifestPath} has already been updated. You will need to update the 'WebApplicationInfo' and port settings manually`));
+                return;
+            }
+
+            // Update manifest file
             const re: RegExp = new RegExp('{application GUID here}', 'g');
-            const updatedManifestContent: string = manifestContent.replace(re, applicationId);
+            const rePort = new RegExp('{PORT}', 'g');
+            const updatedManifestContent: string = manifestContent.replace(re, applicationId).replace(rePort, port);
             await fs.writeFileSync(manifestPath, updatedManifestContent);
             await modifyManifestFile(manifestPath, 'random');
         } else {
@@ -112,8 +136,8 @@ async function updateProjectManifest(applicationId: string, manifestPath: string
     }
 }
 
-export async function writeApplicationData(applicationId: string, manifestPath: string = defaults.manifestFilePath, envFilePath: string = defaults.envDataFilePath, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath) {
-    updateEnvFile(applicationId, envFilePath);
-    updateFallBackAuthDialogFile(applicationId, fallbackAuthDialogPath);
-    await updateProjectManifest(applicationId, manifestPath)
+export async function writeApplicationData(applicationId: string, port: string, manifestPath: string = defaults.manifestFilePath, envFilePath: string = defaults.envDataFilePath, fallbackAuthDialogPath = defaults.fallbackAuthDialogTypescriptFilePath) {
+    updateEnvFile(applicationId, port, envFilePath);
+    updateFallBackAuthDialogFile(applicationId, port, fallbackAuthDialogPath);
+    await updateProjectManifest(applicationId, port, manifestPath)
 }
