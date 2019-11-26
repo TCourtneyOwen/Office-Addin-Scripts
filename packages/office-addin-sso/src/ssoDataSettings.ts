@@ -65,12 +65,12 @@ function updateEnvFile(applicationId: string, port: string, envFilePath: string 
             const appDataContent = fs.readFileSync(envFilePath, 'utf8');
 
             // Check to see if the fallbackauthdialog file has already been updated and return if it has.
-            if (!appDataContent.includes('{APPLICATION_ID}') || !appDataContent.includes('{PORT}')) {
-                console.log(chalk.yellow(`${envFilePath} has already been updated. You will need to update the APPLICATION_ID and PORT settings manually`));
+            if (!appDataContent.includes('{CLIENT_ID}') || !appDataContent.includes('{PORT}')) {
+                console.log(chalk.yellow(`${envFilePath} has already been updated. You will need to update the CLIENT_ID and PORT settings manually`));
                 return;
             }
 
-            const updatedAppDataContent = appDataContent.replace('{APPLICATION_ID}', applicationId).replace('{PORT}', port);
+            const updatedAppDataContent = appDataContent.replace('{CLIENT_ID}', applicationId).replace('{PORT}', port);
             fs.writeFileSync(envFilePath, updatedAppDataContent);
         } else {
             throw new Error(`${envFilePath} does not exist`)
