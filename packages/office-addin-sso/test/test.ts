@@ -9,6 +9,7 @@ import * as server from './../src/server';
 import * as ssoData from './../src/ssoDataSettings';
 import * as testHelper from "office-addin-test-helpers";
 const appId: string = '584c9885-baa7-44ef-95b6-6df1064a2e25';
+const port: string = '3000';
 const ssoAppName: string = 'Office-Addin-Taskpane-SSO-Test';
 const secret: string = '9lcUGBHc8F0s/8FINhwLmTUuhn@KBp=_';
 
@@ -30,19 +31,22 @@ describe("Unit Tests", function () {
             fs.copyFileSync(path.resolve(`${__dirname}/test-manifest.xml`), copyManifestFile);
         });
         it("Write application id to env, manifest and fallbackauthtaskpane files", async function () {
-            await ssoData.writeApplicationData(appId, copyManifestFile, copyEnvFile, copyFallbackAuthTaskpaneFile);
+            await ssoData.writeApplicationData(appId, port, copyManifestFile, copyEnvFile, copyFallbackAuthTaskpaneFile);
 
             // Read from updated env copy and ensure it contains the appId
             const envFile = fs.readFileSync(copyEnvFile, 'utf8');
             assert.equal(envFile.includes(appId), true);
+            assert.equal(envFile.includes(port), true);
 
             // Read from updated manifest copy and ensure it contains the appId
-            const manifestFile = fs.readFileSync(copyEnvFile, 'utf8');
+            const manifestFile = fs.readFileSync(copyManifestFile, 'utf8');
             assert.equal(manifestFile.includes(appId), true);
+            assert.equal(manifestFile.includes(port), true);
 
             // Read from updated fallbackauthtaskpane copy and ensure it contains the appId
-            const fallbackAuthTaskpaneFile = fs.readFileSync(copyEnvFile, 'utf8');
+            const fallbackAuthTaskpaneFile = fs.readFileSync(copyFallbackAuthTaskpaneFile, 'utf8');
             assert.equal(fallbackAuthTaskpaneFile.includes(appId), true);
+            assert.equal(fallbackAuthTaskpaneFile.includes(port), true);
         });
         after("Delete copies of test files", function () {
             fs.unlinkSync(copyEnvFile);

@@ -6,7 +6,7 @@
 
 import * as express from 'express';
 import * as fetch from 'node-fetch';
-const form = require('form-urlencoded').default;
+import * as form from 'form-urlencoded';
 
 export class AuthRouter {
     public router: express.Router;
@@ -38,7 +38,7 @@ export class AuthRouter {
                 try {
                     const tokenResponse = await fetch(`${stsDomain}/${tenant}/${tokenURLSegment}`, {
                         method: 'POST',
-                        body: form(formParams),
+                        body: form.default(formParams),
                         headers: {
                             'Accept': 'application/json',
                             'Content-Type': 'application/x-www-form-urlencoded'
