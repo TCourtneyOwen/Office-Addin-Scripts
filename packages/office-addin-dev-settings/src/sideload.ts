@@ -18,6 +18,8 @@ import * as path from "path";
 import * as util from "util";
 import { registerAddIn } from "./dev-settings";
 import { chooseOfficeApp } from "./prompt";
+import { execSync, spawn } from "child_process";
+import { Console } from "console";
 
 const readFileAsync = util.promisify(fs.readFile);
 
@@ -52,7 +54,7 @@ export async function generateSideloadFile(app: OfficeApp, manifest: ManifestInf
   if (!addInType) {
     throw new Error("The manifest contains an unsupported OfficeApp xsi:type.");
   }
-  
+
   const templatePath = document ? path.resolve(document) : getTemplatePath(app, addInType);
 
   if (!templatePath) {
@@ -104,12 +106,12 @@ export async function generateSideloadFile(app: OfficeApp, manifest: ManifestInf
  * @param isTest Indicates whether to append test query param to suppress Office Online dialogs.
  * @returns Document url with query params appended.
  */
-export async function generateSideloadUrl(manifestFileName: string, manifest: ManifestInfo, documentUrl: string | undefined,  isTest: boolean = false): Promise<string> {
+export async function generateSideloadUrl(manifestFileName: string, manifest: ManifestInfo, documentUrl: string | undefined, isTest: boolean = false): Promise<string> {
   const testQueryParam = "&wdaddintest=true";
 
   if (documentUrl === undefined) {
     throw new Error("The document url was not provided.");
-  } 
+  }
 
   if (!manifest.id) {
     throw new Error("The manifest does not contain the id for the add-in.");
@@ -129,12 +131,12 @@ export async function generateSideloadUrl(manifestFileName: string, manifest: Ma
   }
 
   let queryParms: string = `&wdaddindevserverport=${sourceLocationUrl.port}&wdaddinmanifestfile=${manifestFileName}&wdaddinmanifestguid=${manifest.id}`;
-  
+
   if (isTest) {
     queryParms = `${queryParms}${testQueryParam}`;
   }
 
-  return`${documentUrl}${queryParms}`;
+  return `${documentUrl}${queryParms}`;
 }
 
 /**
@@ -200,11 +202,11 @@ function getWebExtensionPath(
 
 function isSideloadingSupportedForHost(app: OfficeApp, isDesktop: boolean): boolean {
   if (isDesktop) {
-    if (app === OfficeApp.Outlook || app === OfficeApp.Project || app === OfficeApp.OneNote) {
+    if (app === OfficeApp.Project || app === OfficeApp.OneNote) {
       return false;
     }
   } else {
-    if (app === OfficeApp.Outlook || app === OfficeApp.Project) {
+    if (app === OfficeApp.Project) {
       return false;
     }
   }
@@ -250,6 +252,36 @@ function makePathUnique(originalPath: string, tryToDelete: boolean = false): str
   return currentPath;
 }
 
+function sideloadOutlook(manifestPath: string, manifest: ManifestInfo): void {
+  try {
+    const sideloadOutlookCommand = `powershell -ExecutionPolicy Bypass -File "${path.resolve(`${__dirname}/scripts/sideloadOutlook.ps1`)}" "${manifestPath}"`;
+    console.log(`Registering ${manifest.displayName} add-in.`);
+    console.log("Provide valid Microsoft Office 365 credentials to log into ExchangeOnline.\nPlease note, the log-in process can take about a minute.");
+        
+    const subprocess = spawn(sideloadOutlookCommand, [], {
+      detached: true,
+      shell: true,
+      stdio: "pipe",
+      windowsHide: false,
+    });
+
+    subprocess.on("error", (err) => {
+      console.log(`Unable to run command: ${sideloadOutlookCommand}.\n${err}`);
+    });
+
+    subprocess.on("close", (code) => {
+      if (code === 0) {
+        console.log(`Successfully registered the ${manifest.displayName} add-in.`)
+      } else {
+        console.log(`Failed to register the ${manifest.displayName} add-in.`)
+      }
+    });
+  } catch (err) {
+    const errorMessage: string = `Unable to register the ${manifest.displayName} add-in: \n${err}`;
+    throw new Error(errorMessage);
+  }
+}
+
 /**
  * Starts the Office app and loads the Office Add-in.
  * @param manifestPath Path to the manifest file for the Office Add-in.
@@ -289,14 +321,18 @@ export async function sideloadAddIn(manifestPath: string, app?: OfficeApp, canPr
   }
 
   if (isSideloadingSupportedForHost(app, isDesktop)) {
-    if (isDesktop) {
-      await registerAddIn(manifestPath);
-      sideloadFile = await generateSideloadFile(app, manifest, document);
+    if (app == OfficeApp.Outlook) {
+      sideloadOutlook(manifestPath, manifest);
     } else {
-      const manifestFileName: string = path.basename(manifestPath);
-      sideloadFile = await generateSideloadUrl(manifestFileName, manifest, document, isTest);
+      if (isDesktop) {
+        await registerAddIn(manifestPath);
+        sideloadFile = await generateSideloadFile(app, manifest, document);
+      } else {
+        const manifestFileName: string = path.basename(manifestPath);
+        sideloadFile = await generateSideloadUrl(manifestFileName, manifest, document, isTest);
+      }
+      await open(sideloadFile, { wait: false });
     }
-    await open(sideloadFile, { wait: false });
   } else {
     throw new Error(`Sideload is not supported for ${app} on ${isDesktop ? AppType.Desktop : AppType.Web}.`);
   }
