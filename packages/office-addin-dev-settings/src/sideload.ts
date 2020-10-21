@@ -254,7 +254,7 @@ function makePathUnique(originalPath: string, tryToDelete: boolean = false): str
 
 function sideloadOutlook(manifestPath: string, manifest: ManifestInfo): void {
   try {
-    const sideloadOutlookCommand = `powershell -ExecutionPolicy Bypass -File "${path.resolve(`${__dirname}/scripts/sideloadOutlook.ps1`)}" "${manifestPath}"`;
+    const sideloadOutlookCommand = `powershell -NoExit -ExecutionPolicy Bypass -File "${path.resolve(`${__dirname}/scripts/sideloadOutlook.ps1`)}" "${manifestPath}"`;
     console.log(`Registering ${manifest.displayName} add-in.`);
     console.log("Provide valid Microsoft Office 365 credentials to log into ExchangeOnline.\nPlease note, the log-in process can take about a minute.");
         

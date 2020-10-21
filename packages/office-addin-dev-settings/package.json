@@ -8,7 +8,8 @@
     "cli": "node lib/cli.js",
     "copy": "cpy src/scripts/*.* lib/scripts",
     "test": "mocha -r ts-node/register test/**/*.ts",
-    "watch": "rimraf lib && concurrently \"tsc -p tsconfig.json -w\""
+    "watch": "rimraf lib && concurrently \"tsc -p tsconfig.json -w\"",
+    "sideload": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command ./src/scripts/registerOutlookAddin.ps1 c:/outlooksso/manifest.xml"
   },
   "author": "Office Dev",
   "license": "MIT",
