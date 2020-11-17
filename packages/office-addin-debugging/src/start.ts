@@ -242,6 +242,12 @@ export async function startDebugging(manifestPath: string, appType: AppType, app
             }
         }
 
+        // enable Outlook sideloading
+        if (isDesktopAppType && app == OfficeApp.Outlook) {
+            await devSettings.enableOutlookSideloading(manifestPath);
+            console.log(`Enabled sideloading for Outlook.`);
+        }
+
         // set source bundle url
         if (isDesktopAppType && isWindowsPlatform) {
             if (sourceBundleUrlComponents) {

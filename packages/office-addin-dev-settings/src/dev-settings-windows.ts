@@ -9,6 +9,7 @@ import * as registry from "./registry";
 const DeveloperSettingsRegistryKey: string = `HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Office\\16.0\\Wef\\Developer`;
 
 const OpenDevTools: string = "OpenDevTools";
+const OutlookSideloadManifestPath: string = "OutlookSideloadManifestPath";
 const RuntimeLogging: string = "RuntimeLogging";
 const SourceBundleExtension: string = "SourceBundleExtension";
 const SourceBundleHost: string = "SourceBundleHost";
@@ -59,6 +60,12 @@ export async function enableRuntimeLogging(path: string): Promise<void> {
   const key = getDeveloperSettingsRegistryKey(RuntimeLogging);
 
   return registry.addStringValue(key, "", path); // empty string for the default value
+}
+
+export async function enableOutlookSideloading(manifestPath: string): Promise<void> {
+  const key = getDeveloperSettingsRegistryKey(OutlookSideloadManifestPath);
+
+  return registry.addStringValue(key, "", manifestPath); // empty string for the default value
 }
 
 export function getDeveloperSettingsRegistryKey(addinId: string): registry.RegistryKey {

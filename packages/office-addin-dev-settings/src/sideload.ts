@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as fs from "fs";
+import { ChildProcess, spawn } from "child_process"
 import * as jszip from "jszip";
 import {
   AddInType,
@@ -18,8 +19,9 @@ import * as path from "path";
 import * as util from "util";
 import { registerAddIn } from "./dev-settings";
 import { chooseOfficeApp } from "./prompt";
-import { execSync, spawn } from "child_process";
+
 import { Console } from "console";
+import * as registry from "./registry";
 
 const readFileAsync = util.promisify(fs.readFile);
 
@@ -252,32 +254,15 @@ function makePathUnique(originalPath: string, tryToDelete: boolean = false): str
   return currentPath;
 }
 
-function sideloadOutlook(manifestPath: string, manifest: ManifestInfo): void {
+async function getOutlookExePath(manifestPath: string, manifest: ManifestInfo): Promise<string | undefined> {
   try {
-    const sideloadOutlookCommand = `powershell -NoExit -ExecutionPolicy Bypass -File "${path.resolve(`${__dirname}/scripts/sideloadOutlook.ps1`)}" "${manifestPath}"`;
-    console.log(`Registering ${manifest.displayName} add-in.`);
-    console.log("Provide valid Microsoft Office 365 credentials to log into ExchangeOnline.\nPlease note, the log-in process can take about a minute.");
-        
-    const subprocess = spawn(sideloadOutlookCommand, [], {
-      detached: true,
-      shell: true,
-      stdio: "pipe",
-      windowsHide: false,
-    });
+    const OutlookInstallPathRegistryKey: string = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\OUTLOOK.EXE`;
+    const key = new registry.RegistryKey(`${OutlookInstallPathRegistryKey}`);
+    const outlookExePath = await registry.getStringValue(key, "");
 
-    subprocess.on("error", (err) => {
-      console.log(`Unable to run command: ${sideloadOutlookCommand}.\n${err}`);
-    });
-
-    subprocess.on("close", (code) => {
-      if (code === 0) {
-        console.log(`Successfully registered the ${manifest.displayName} add-in.`)
-      } else {
-        console.log(`Failed to register the ${manifest.displayName} add-in.`)
-      }
-    });
+    return outlookExePath;
   } catch (err) {
-    const errorMessage: string = `Unable to register the ${manifest.displayName} add-in: \n${err}`;
+    const errorMessage: string = `Unable to find Outlook install location: \n${err}`;
     throw new Error(errorMessage);
   }
 }
@@ -291,7 +276,7 @@ function sideloadOutlook(manifestPath: string, manifest: ManifestInfo): void {
 export async function sideloadAddIn(manifestPath: string, app?: OfficeApp, canPrompt: boolean = false,
   platform?: AppType, document?: string, isTest: boolean = false): Promise<void> {
   let isDesktop: boolean = true;
-  let sideloadFile: string;
+  let sideloadFile: string | undefined;
   const manifest: ManifestInfo = await readManifestFile(manifestPath);
   const appsInManifest = getOfficeAppsForManifestHosts(manifest.hosts);
 
@@ -322,7 +307,11 @@ export async function sideloadAddIn(manifestPath: string, app?: OfficeApp, canPr
 
   if (isSideloadingSupportedForHost(app, isDesktop)) {
     if (app == OfficeApp.Outlook) {
-      sideloadOutlook(manifestPath, manifest);
+      sideloadFile = await getOutlookExePath(manifestPath, manifest);
+      if (sideloadFile){
+        startDetachedProcess(sideloadFile);
+        return;
+      }
     } else {
       if (isDesktop) {
         await registerAddIn(manifestPath);
@@ -336,4 +325,24 @@ export async function sideloadAddIn(manifestPath: string, app?: OfficeApp, canPr
   } else {
     throw new Error(`Sideload is not supported for ${app} on ${isDesktop ? AppType.Desktop : AppType.Web}.`);
   }
+}
+
+export function startDetachedProcess(commandLine: string, verbose: boolean = false): ChildProcess {
+  if (verbose) {
+      console.log(`Starting: ${commandLine}`);
+  }
+
+  const subprocess = spawn(commandLine, [], {
+      detached: true,
+      shell: true,
+      stdio: "ignore",
+      windowsHide: false,
+  });
+
+  subprocess.on("error", (err) => {
+      console.log(`Unable to run command: ${commandLine}.\n${err}`);
+  });
+
+  subprocess.unref();
+  return subprocess;
 }

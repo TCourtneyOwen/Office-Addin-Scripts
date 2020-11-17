@@ -135,6 +135,15 @@ export async function enableRuntimeLogging(path?: string): Promise<string> {
   }
 }
 
+export async function enableOutlookSideloading(manifestPath: string): Promise<void> {
+  switch (process.platform) {
+    case "win32":
+      return await devSettingsWindows.enableOutlookSideloading(manifestPath);
+  default:
+    throw new Error(`Platform not supported: ${process.platform}.`);
+  }
+}
+
 /**
  * Returns the manifest paths for the add-ins that are registered
  */
